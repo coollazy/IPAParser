@@ -1,39 +1,39 @@
 # IPABuilder
 
-## Introduction
+## 介紹
 
-Parse and repackage IPA files.
+解析及重新封裝 IPA
 
-## SPM Installation
+## SPM安裝
 
-- Add to Package.swift dependencies:
+- Package.swift 的 dependencies 增加
 
 ```
 .package(name: "IPABuilder", url: "https://github.com/coollazy/IPABuilder.git", from: "1.0.4"),
 ```
 
-- Add to target dependencies:
+- target 的 dependencies 增加
 
 ```
 .product(name: "IPABuilder", package: "IPABuilder"),
 ```
 
-## Usage
+## 使用範例
 
 ### IPABuilder
 
-- Initialize Builder with IPA
+- 解壓縮, 壓縮 IPA
 
 ```
-// Initialize IPABuilder
+// 初始化 IPABuilder
 let ipaTemplatePath = URL(string: "path_to_your_ipa")!
 let ipaBuilder = try IPABuilder(ipaURL: ipaTemplatePath)
 
-// Get the path to the folder containing the extracted IPA contents
+// 取得解壓縮後 IPA 內容的資料夾路徑
 let appDirectory = try ipaBuilder.appDirectory()
 ```
 
-- Build IPA
+- 壓縮 IPA
 
 ```
 // 將剛剛解壓縮後的資料夾路徑 重新壓縮成 IPA
@@ -43,13 +43,13 @@ try ipaBuilder.build(toDirectory: toURL)
 
 ### PlistBuilder
 
-- Modify Info.plist file
+- 修改 Info.plist 檔案
 
 ```
-// Path to the XXX.app folder, usually obtained from IPABuilder's appDirectory
+// XXX.app 的資料夾路徑, 通常使用 IPABuilder 的 appDirectory
 let toAppDirectory = URL(string: "path_to_app_want_to_place")!
 
-// Replace the value for the specified key in Info.plist and write directly to the file
+// 更換 info.plist 的指定 Key 的值, 並直接寫入指定的 Info.plist 檔案內
 try PlistBuilder()
 	.replace(key: "CFBundleIdentifier", with: "com.new.bundle.id")
 	.replace(key: "CFBundleDisplayName", with: "App新的顯示名稱")
