@@ -1,53 +1,73 @@
 import Foundation
-import Zip
 import MD5
-import SwiftCLI
+import ZIPFoundation
 
-// 將傳入的 IPA 解壓縮到 appDirectory, 呼叫 build 重新壓縮成 IPA
+/// 將 IPA 解壓縮，並提供 AppDirectory
+/// 呼叫 build 重新壓縮成 IPA 到指令路徑
 public class IPABuilder {
     let ipaURL: URL
-    public var workingDirectory: URL = FileManager.default.temporaryDirectory.appendingPathComponent("IPABuilder").appendingPathComponent(Date().md5)
-
+    
+    public let workingDirectory: URL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("IPABuilder")
+        .appendingPathComponent(Date().md5)
+    
+    private lazy var unzipDirectoryURL: URL = {
+        workingDirectory.appendingPathComponent("unzip")
+    }()
+    private lazy var zipDirectoryURL: URL = {
+        workingDirectory.appendingPathComponent("zip")
+    }()
+    
     deinit {
-        do {
-            try FileManager.default.removeItem(atPath: workingDirectory.path)
-        } catch let error {
-            print("[ERROR] \(error.localizedDescription)")
-        }
+        try? FileManager.default.removeItem(atPath: workingDirectory.path)
     }
     
-    public init(ipaURL: URL) throws {
+    public init(_ ipaURL: URL) throws {
         self.ipaURL = ipaURL
         guard FileManager.default.fileExists(atPath: ipaURL.path) else {
             throw IPABuilderError.templateIPANotFound(ipaURL.path)
         }
         
-        Zip.addCustomFileExtension("ipa")
-        if FileManager.default.fileExists(atPath: workingDirectory.path) == false {
-            try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
+        if FileManager.default.fileExists(atPath: unzipDirectoryURL.path) == false {
+            try FileManager.default.createDirectory(at: unzipDirectoryURL, withIntermediateDirectories: true, attributes: nil)
         }
-        try Zip.unzipFile(ipaURL, destination: workingDirectory, overwrite: false, password: nil)
+        try FileManager.default.unzipItem(at: ipaURL, to: unzipDirectoryURL)
     }
     
+    /// App資料夾目錄
     public func appDirectory() throws -> URL {
-        let paths = try FileManager.default.subpathsOfDirectory(atPath: workingDirectory.path).filter({ $0.hasSuffix(".app") })
+        let paths = try FileManager.default
+            .subpathsOfDirectory(atPath: unzipDirectoryURL.path)
+            .filter({ $0.hasSuffix(".app") })
+        
         guard let appSubPath = paths.first else {
             throw IPABuilderError.ipaInvalid
         }
         
-        return workingDirectory.appendingPathComponent(appSubPath)
+        return unzipDirectoryURL.appendingPathComponent(appSubPath)
     }
     
+    /// 壓縮成 IPA 到指令路徑
     public func build(toDirectory: URL) throws {
-        let modifiedArchiveFileLocation = workingDirectory.appendingPathComponent(Date().md5).appendingPathExtension("ipa")
+        // 建立暫存檔案路徑及名稱
+        let modifiedArchiveFileLocation = zipDirectoryURL
+            .appendingPathComponent(Date().md5)
+            .appendingPathExtension("ipa")
         
-        // 這裡改用 SwiftCLI 直接呼叫 zip 指令, 因為用 Zip 的壓縮方式，壓出來的檔案無法正常安裝到裝置上。
+        // 在工作目錄下面，建立 zip 資料夾
+        if FileManager.default.fileExists(atPath: zipDirectoryURL.path) == false {
+            try FileManager.default.createDirectory(at: zipDirectoryURL, withIntermediateDirectories: true, attributes: nil)
+        }
+        
         do {
-            try Task.run("/usr/bin/zip", arguments: ["-qr", modifiedArchiveFileLocation.path, "Payload"], directory: workingDirectory.path)
+            let paths = try FileManager.default.contentsOfDirectory(atPath: unzipDirectoryURL.path)
+                .map { unzipDirectoryURL.appendingPathComponent($0) }
+            try FileManager.default.zipItems(at: paths, to: modifiedArchiveFileLocation)
         } catch {
             throw IPABuilderError.zipFailed
         }
         
+        // 將暫存檔案複製到指定的位置
         if FileManager.default.fileExists(atPath: toDirectory.deletingLastPathComponent().path) == false {
             try FileManager.default.createDirectory(at: toDirectory.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
         }
