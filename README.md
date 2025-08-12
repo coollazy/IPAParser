@@ -40,7 +40,7 @@ let appDirectory = try ipaBuilder.appDirectory()
 - Build IPA
 
 ```
-// 將剛剛解壓縮後的資料夾路徑 重新壓縮成 IPA
+// Repackage the previously extracted folder into a new IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
 try ipaBuilder.build(toDirectory: toURL)
 ```
