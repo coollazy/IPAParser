@@ -4,56 +4,57 @@
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![SPM](https://img.shields.io/badge/SPM-Supported-green)
 [![CI](https://github.com/coollazy/IPAParser/actions/workflows/ci.yml/badge.svg)](https://github.com/coollazy/IPAParser/actions/workflows/ci.yml)
-## Introduction
 
-Parse and repackage IPA files.
+## 介紹
 
-## SPM Installation
+解析及重新封裝 IPA
 
-- Add to Package.swift dependencies:
+## SPM安裝
+
+- Package.swift 的 dependencies 增加
 
 ```swift
 .package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.0"),
 ```
 
-- Add to target dependencies:
+- target 的 dependencies 增加
 
 ```swift
 .product(name: "IPAParser", package: "IPAParser"),
 ```
 
-## Usage
+## 使用範例
 
 ### IPAParser
 
-- Initialize Builder with IPA
+- 解壓縮, 壓縮 IPA
 
 ```swift
-// Initialize IPAParser
+// 初始化 IPAParser
 let ipaTemplatePath = URL(string: "path_to_your_ipa")!
 let ipaParser = try IPAParser(ipaURL: ipaTemplatePath)
 
-// Get the path to the folder containing the extracted IPA contents
+// 取得解壓縮後 IPA 內容的資料夾路徑
 let appDirectory = try ipaParser.appDirectory()
 ```
 
-- Build IPA
+- 壓縮 IPA
 
 ```swift
-// Repackage the previously extracted folder into a new IPA
+// 將剛剛解壓縮後的資料夾路徑 重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
 try ipaParser.build(toDirectory: toURL)
 ```
 
 ### PlistParser
 
-- Modify Info.plist file
+- 修改 Info.plist 檔案
 
 ```swift
-// Path to the XXX.app folder, usually obtained from IPAParser's appDirectory
+// XXX.app 的資料夾路徑, 通常使用 IPAParser 的 appDirectory
 let toAppDirectory = URL(string: "path_to_app_want_to_place")!
 
-// Replace the value for the specified key in Info.plist and write directly to the file
+// 更換 info.plist 的指定 Key 的值, 並直接寫入指定的 Info.plist 檔案內
 try PlistParser()
 	.replace(key: "CFBundleIdentifier", with: "com.new.bundle.id")
 	.replace(key: "CFBundleDisplayName", with: "App新的顯示名稱")
