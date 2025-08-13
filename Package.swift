@@ -11,7 +11,9 @@ let package = Package(
     products: [
         .library(
             name: "IPAParser",
-            targets: ["IPAParser"]
+            targets: [
+                "IPAParser"
+            ]
         ),
         .library(
             name: "PlistParser",
@@ -28,6 +30,7 @@ let package = Package(
             name: "IPAParser",
             dependencies: [
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
+                .target(name: "PlistParser"),
             ]
         ),
         .target(
