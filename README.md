@@ -13,7 +13,7 @@ Parse and repackage IPA files.
 - Add to Package.swift dependencies:
 
 ```swift
-.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.0"),
+.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
 ```
 
 - Add to target dependencies:
