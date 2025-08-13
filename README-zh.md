@@ -43,7 +43,7 @@ let appDirectory = try ipaParser.appDirectory()
 ```swift
 // 將剛剛解壓縮後的資料夾路徑 重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
-try ipaParser.build(toDirectory: toURL)
+try ipaParser.build(toPath: toURL)
 ```
 
 ### PlistParser
