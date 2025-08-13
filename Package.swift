@@ -4,19 +4,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "IPABuilder",
+    name: "IPAParser",
     platforms: [
         .macOS(.v10_15),
     ],
     products: [
         .library(
-            name: "IPABuilder",
-            targets: ["IPABuilder"]
+            name: "IPAParser",
+            targets: ["IPAParser"]
         ),
         .library(
-            name: "PlistBuilder",
+            name: "PlistParser",
             targets: [
-                "PlistBuilder"
+                "PlistParser"
             ]
         ),
     ],
@@ -27,7 +27,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "IPABuilder",
+            name: "IPAParser",
             dependencies: [
                 .product(name: "SwiftCLI", package: "SwiftCLI"),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
@@ -35,7 +35,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "PlistBuilder",
+            name: "PlistParser",
             dependencies: [
             ]
         ),

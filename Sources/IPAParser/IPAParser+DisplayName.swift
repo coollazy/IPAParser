@@ -1,6 +1,6 @@
-import PlistBuilder
+import PlistParser
 
-public extension IPABuilder {
+public extension IPAParser {
     @discardableResult
     func replace(displayName: String?) -> Self {
         guard let displayName = displayName else {
@@ -11,7 +11,7 @@ public extension IPABuilder {
             return self
         }
         
-        try? PlistBuilder(url: infoPlistURL)
+        try? PlistParser(url: infoPlistURL)
             .replace(key: "CFBundleDisplayName", with: displayName)
             .build()
         

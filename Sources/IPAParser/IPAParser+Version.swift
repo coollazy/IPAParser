@@ -1,6 +1,6 @@
 import Foundation
 
-public extension IPABuilder {
+public extension IPAParser {
     func version() -> String? {
         guard let infoPlistURL = try? appDirectory().appendingPathComponent("Info.plist") else {
             return nil

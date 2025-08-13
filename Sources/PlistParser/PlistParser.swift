@@ -1,16 +1,16 @@
 import Foundation
 
-public class PlistBuilder {
+public class PlistParser {
     private let url: URL
     public var content: Dictionary<String, Any>?
     
     public init(url: URL) throws {
         self.url = url
         guard let data = try? Data(contentsOf: url) else {
-            throw PlistBuilderError.readFailed(url)
+            throw PlistParserError.readFailed(url)
         }
         guard let content = try? PropertyListSerialization.propertyList(from: data, format: nil) as? Dictionary<String, Any> else {
-            throw PlistBuilderError.decodeContentFailed
+            throw PlistParserError.decodeContentFailed
         }
         self.content = content
     }
@@ -18,7 +18,7 @@ public class PlistBuilder {
     @discardableResult
     public func replace(key: String, with value: String?) throws -> Self {
         guard content?[key] != nil else {
-            throw PlistBuilderError.replaceFailed(key, value ?? "nil")
+            throw PlistParserError.replaceFailed(key, value ?? "nil")
         }
         
         content?[key] = value
@@ -30,7 +30,7 @@ public class PlistBuilder {
         let content = content ?? [String: Any]()
         
         guard let data = try? PropertyListSerialization.data(fromPropertyList: content, format: .xml, options: 0) else {
-            throw PlistBuilderError.encodeContentFailed
+            throw PlistParserError.encodeContentFailed
         }
         try data.write(to: toPlistURL)
     }

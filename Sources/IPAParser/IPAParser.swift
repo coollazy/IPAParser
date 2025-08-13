@@ -4,11 +4,11 @@ import ZIPFoundation
 
 /// 將 IPA 解壓縮，並提供 AppDirectory
 /// 呼叫 build 重新壓縮成 IPA 到指令路徑
-public class IPABuilder {
+public class IPAParser {
     let ipaURL: URL
     
     public let workingDirectory: URL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("IPABuilder")
+        .appendingPathComponent("IPAParser")
         .appendingPathComponent(Date().md5)
     
     private lazy var unzipDirectoryURL: URL = {
@@ -25,7 +25,7 @@ public class IPABuilder {
     public init(_ ipaURL: URL) throws {
         self.ipaURL = ipaURL
         guard FileManager.default.fileExists(atPath: ipaURL.path) else {
-            throw IPABuilderError.templateIPANotFound(ipaURL.path)
+            throw IPAParserError.templateIPANotFound(ipaURL.path)
         }
         
         if FileManager.default.fileExists(atPath: unzipDirectoryURL.path) == false {
@@ -41,7 +41,7 @@ public class IPABuilder {
             .filter({ $0.hasSuffix(".app") })
         
         guard let appSubPath = paths.first else {
-            throw IPABuilderError.ipaInvalid
+            throw IPAParserError.ipaInvalid
         }
         
         return unzipDirectoryURL.appendingPathComponent(appSubPath)
@@ -64,7 +64,7 @@ public class IPABuilder {
                 .map { unzipDirectoryURL.appendingPathComponent($0) }
             try FileManager.default.zipItems(at: paths, to: modifiedArchiveFileLocation)
         } catch {
-            throw IPABuilderError.zipFailed
+            throw IPAParserError.zipFailed
         }
         
         // 將暫存檔案複製到指定的位置
