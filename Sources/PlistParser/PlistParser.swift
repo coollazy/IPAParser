@@ -2,13 +2,13 @@ import Foundation
 
 public class PlistParser {
     private let url: URL
-    public private(set) var content: Dictionary<String, Any>
+    public private(set) var content: [String: Any]
     
     public init(url: URL) throws {
         self.url = url
         do {
             let data = try Data(contentsOf: url)
-            guard let content = try PropertyListSerialization.propertyList(from: data, format: nil) as? Dictionary<String, Any> else {
+            guard let content = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
                 throw PlistParserError.decodeContentFailed
             }
             self.content = content
@@ -22,16 +22,85 @@ public class PlistParser {
         }
     }
     
+    // MARK: - Read
+    /// 讀取巢狀 key，例如 "CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconFiles"
+    public func get(keyPath: String) -> Any? {
+        let keys = keyPath.components(separatedBy: ".")
+        var current: Any? = content
+        
+        for key in keys {
+            if let dict = current as? [String: Any] {
+                current = dict[key]
+            } else {
+                return nil
+            }
+        }
+        return current
+    }
+    
+    // MARK: - Create / Update
+    /// 設定巢狀 key，不存在的中間層會自動建立
     @discardableResult
-    public func replace(key: String, with value: String?) throws -> Self {
-        guard content[key] != nil else {
-            throw PlistParserError.replaceFailed(key, value ?? "nil")
+    public func replace(keyPath: String, with value: Any?) -> Self {
+        var keys = keyPath.components(separatedBy: ".")
+        guard let firstKey = keys.first else { return self }
+        
+        if keys.count == 1 {
+            content[firstKey] = value
+            return self
         }
         
-        content[key] = value
+        var dict = content
+        setValue(&dict, keys: keys, value: value)
+        content = dict
         return self
     }
     
+    private func setValue(_ dict: inout [String: Any], keys: [String], value: Any?) {
+        var keys = keys
+        let currentKey = keys.removeFirst()
+        
+        if keys.isEmpty {
+            dict[currentKey] = value
+        } else {
+            var nestedDict = dict[currentKey] as? [String: Any] ?? [:]
+            setValue(&nestedDict, keys: keys, value: value)
+            dict[currentKey] = nestedDict
+        }
+    }
+    
+    // MARK: - Delete
+    /// 移除巢狀 key，如果不存在則不做任何事
+    @discardableResult
+    public func remove(keyPath: String) -> Self {
+        var keys = keyPath.components(separatedBy: ".")
+        guard let firstKey = keys.first else { return self }
+        
+        if keys.count == 1 {
+            content.removeValue(forKey: firstKey)
+            return self
+        }
+        
+        var dict = content
+        removeValue(&dict, keys: keys)
+        content = dict
+        return self
+    }
+    
+    private func removeValue(_ dict: inout [String: Any], keys: [String]) {
+        var keys = keys
+        let currentKey = keys.removeFirst()
+        
+        if keys.isEmpty {
+            dict.removeValue(forKey: currentKey)
+        } else {
+            guard var nestedDict = dict[currentKey] as? [String: Any] else { return }
+            removeValue(&nestedDict, keys: keys)
+            dict[currentKey] = nestedDict
+        }
+    }
+    
+    // MARK: - Write
     public func build(toPlistURL: URL? = nil) throws {
         let toPlistURL = toPlistURL ?? url
         let content = content

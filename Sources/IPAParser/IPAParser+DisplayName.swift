@@ -10,7 +10,7 @@ public extension IPAParser {
         do {
             let infoPlistURL = try appDirectory().appendingPathComponent("Info.plist")
             try PlistParser(url: infoPlistURL)
-                .replace(key: "CFBundleDisplayName", with: displayName)
+                .replace(keyPath: "CFBundleDisplayName", with: displayName)
                 .build()
             
             return self
