@@ -26,7 +26,7 @@ public class IPAParser {
         }
     }
     
-    public init(_ ipaURL: URL) throws {
+    public init(ipaURL: URL) throws {
         self.ipaURL = ipaURL
         guard FileManager.default.fileExists(atPath: ipaURL.path) else {
             throw IPAParserError.templateIPANotFound(ipaURL.path)
@@ -52,7 +52,7 @@ public class IPAParser {
     }
     
     /// 壓縮成 IPA 到指令路徑
-    public func build(toDirectory: URL) throws {
+    public func build(toPath: URL) throws {
         // 建立暫存檔案路徑及名稱
         let modifiedArchiveFileLocation = zipDirectoryURL
             .appendingPathComponent(UUID().uuidString)
@@ -72,9 +72,9 @@ public class IPAParser {
         }
         
         // 將暫存檔案複製到指定的位置
-        if FileManager.default.fileExists(atPath: toDirectory.deletingLastPathComponent().path) == false {
-            try FileManager.default.createDirectory(at: toDirectory.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+        if FileManager.default.fileExists(atPath: toPath.deletingLastPathComponent().path) == false {
+            try FileManager.default.createDirectory(at: toPath.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
         }
-        try FileManager.default.copyItem(at: modifiedArchiveFileLocation, to: toDirectory)
+        try FileManager.default.copyItem(at: modifiedArchiveFileLocation, to: toPath)
     }
 }

@@ -14,7 +14,7 @@
 - Package.swift 的 dependencies 增加
 
 ```swift
-.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.0"),
+.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
 ```
 
 - target 的 dependencies 增加
@@ -43,7 +43,7 @@ let appDirectory = try ipaParser.appDirectory()
 ```swift
 // 將剛剛解壓縮後的資料夾路徑 重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
-try ipaParser.build(toDirectory: toURL)
+try ipaParser.build(toPath: toURL)
 ```
 
 ### PlistParser
