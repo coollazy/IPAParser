@@ -1,5 +1,4 @@
 import Foundation
-import MD5
 import ZIPFoundation
 
 /// 將 IPA 解壓縮，並提供 AppDirectory
@@ -9,7 +8,7 @@ public class IPAParser {
     
     public let workingDirectory: URL = FileManager.default.temporaryDirectory
         .appendingPathComponent("IPAParser")
-        .appendingPathComponent(Date().md5)
+        .appendingPathComponent(UUID().uuidString)
     
     private lazy var unzipDirectoryURL: URL = {
         workingDirectory.appendingPathComponent("unzip")
@@ -51,7 +50,7 @@ public class IPAParser {
     public func build(toDirectory: URL) throws {
         // 建立暫存檔案路徑及名稱
         let modifiedArchiveFileLocation = zipDirectoryURL
-            .appendingPathComponent(Date().md5)
+            .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("ipa")
         
         // 在工作目錄下面，建立 zip 資料夾

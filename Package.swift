@@ -23,7 +23,6 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/jakeheis/SwiftCLI", from: "6.0.0"),
         .package(url: "https://github.com/coollazy/ZIPFoundation.git", from: "0.9.20"),
-        .package(url: "https://github.com/coollazy/MD5.git", from: "1.1.0"),
     ],
     targets: [
         .target(
@@ -31,7 +30,6 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftCLI", package: "SwiftCLI"),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
-                .product(name: "MD5", package: "MD5"),
             ]
         ),
         .target(
