@@ -12,13 +12,13 @@ Parse and repackage IPA files.
 
 - Add to Package.swift dependencies:
 
-```
+```swift
 .package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.0.4"),
 ```
 
 - Add to target dependencies:
 
-```
+```swift
 .product(name: "IPAParser", package: "IPAParser"),
 ```
 
@@ -28,7 +28,7 @@ Parse and repackage IPA files.
 
 - Initialize Builder with IPA
 
-```
+```swift
 // Initialize IPAParser
 let ipaTemplatePath = URL(string: "path_to_your_ipa")!
 let ipaParser = try IPAParser(ipaURL: ipaTemplatePath)
@@ -39,7 +39,7 @@ let appDirectory = try ipaParser.appDirectory()
 
 - Build IPA
 
-```
+```swift
 // Repackage the previously extracted folder into a new IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
 try ipaParser.build(toDirectory: toURL)
@@ -49,7 +49,7 @@ try ipaParser.build(toDirectory: toURL)
 
 - Modify Info.plist file
 
-```
+```swift
 // Path to the XXX.app folder, usually obtained from IPAParser's appDirectory
 let toAppDirectory = URL(string: "path_to_app_want_to_place")!
 
