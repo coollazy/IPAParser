@@ -1,0 +1,26 @@
+name: CI
+
+# 只在 master 與 develop push 或 PR 時觸發
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Resolve Swift Package Dependencies
+      run: swift package resolve
+
+    - name: Build Swift Package
+      run: swift build --configuration release
