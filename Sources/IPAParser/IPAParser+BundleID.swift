@@ -6,15 +6,18 @@ public extension IPAParser {
         guard let bundleID = bundleID else {
             return self
         }
-        guard let infoPlistURL = try? appDirectory().appendingPathComponent("Info.plist") else {
-            print("[ERROR] Can't find Info.plist")
+        
+        do {
+            let infoPlistURL = try appDirectory().appendingPathComponent("Info.plist")
+            try PlistParser(url: infoPlistURL)
+                .replace(key: "CFBundleIdentifier", with: bundleID)
+                .build()
+            
             return self
         }
-        
-        try? PlistParser(url: infoPlistURL)
-            .replace(key: "CFBundleIdentifier", with: bundleID)
-            .build()
-        
-        return self
+        catch {
+            debugPrint("⚠️⚠️ IPAParser replace bundleID failed: \(error.localizedDescription)")
+            return self
+        }
     }
 }

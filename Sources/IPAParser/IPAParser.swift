@@ -18,7 +18,12 @@ public class IPAParser {
     }()
     
     deinit {
-        try? FileManager.default.removeItem(atPath: workingDirectory.path)
+        do {
+            try FileManager.default.removeItem(atPath: workingDirectory.path)
+        }
+        catch {
+            print("⚠️⚠️ IPAParser remove workingDirectory error: \(error)")
+        }
     }
     
     public init(_ ipaURL: URL) throws {
