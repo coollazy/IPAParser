@@ -14,7 +14,7 @@
 - Package.swift 的 dependencies 增加
 
 ```swift
-.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.0.4"),
+.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.0"),
 ```
 
 - target 的 dependencies 增加
