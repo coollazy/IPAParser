@@ -21,14 +21,12 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/jakeheis/SwiftCLI", from: "6.0.0"),
         .package(url: "https://github.com/coollazy/ZIPFoundation.git", from: "0.9.20"),
     ],
     targets: [
         .target(
             name: "IPAParser",
             dependencies: [
-                .product(name: "SwiftCLI", package: "SwiftCLI"),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
             ]
         ),
