@@ -42,7 +42,7 @@ public class IPAParser {
     public func appDirectory() throws -> URL {
         let paths = try FileManager.default
             .subpathsOfDirectory(atPath: unzipDirectoryURL.path)
-            .filter({ $0.hasSuffix(".app") })
+            .filter({ $0.hasSuffix(".app") && !$0.contains("__MACOSX") })
         
         guard let appSubPath = paths.first else {
             throw IPAParserError.ipaInvalid
