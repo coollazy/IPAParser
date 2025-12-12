@@ -38,5 +38,16 @@ let package = Package(
             dependencies: [
             ]
         ),
+        .testTarget(
+            name: "PlistParserTests",
+            dependencies: ["PlistParser"]
+        ),
+        .testTarget(
+            name: "IPAParserTests",
+            dependencies: ["IPAParser", "PlistParser"],
+            resources: [
+                .process("Resources")
+            ]
+        ),
     ]
 )

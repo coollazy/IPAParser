@@ -1,0 +1,104 @@
+import XCTest
+@testable import IPAParser
+import PlistParser
+
+final class IPAParserTests: XCTestCase {
+    var ipaURL: URL!
+    
+    override func setUpWithError() throws {
+        // Locate the resource
+        // Bundle.module is available because we added resources to the target in Package.swift
+        guard let url = Bundle.module.url(forResource: "Example", withExtension: "ipa") else {
+            XCTFail("Example.ipa not found in bundle")
+            return
+        }
+        ipaURL = url
+    }
+    
+    func testInit() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        XCTAssertNoThrow(try parser.appDirectory())
+    }
+    
+    func testAppDirectoryContainsInfoPList() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlist = appDir.appendingPathComponent("Info.plist")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: infoPlist.path))
+    }
+    
+    func testBuild() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let tempDir = FileManager.default.temporaryDirectory
+        let outputIPA = tempDir.appendingPathComponent(UUID().uuidString + ".ipa")
+        
+        try parser.build(toPath: outputIPA)
+        
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outputIPA.path))
+        
+        // Cleanup
+        try? FileManager.default.removeItem(at: outputIPA)
+    }
+    
+    func testModifyBundleID() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let newBundleID = "com.test.modified"
+        
+        parser.replace(bundleID: newBundleID)
+        
+        // verify by checking the file on disk in the unzip directory
+        let appDir = try parser.appDirectory()
+        let infoPlist = appDir.appendingPathComponent("Info.plist")
+        
+        // Use PlistParser to read it back
+        let plistParser = try PlistParser(url: infoPlist)
+        XCTAssertEqual(plistParser.get(keyPath: "CFBundleIdentifier") as? String, newBundleID)
+    }
+    
+    // MARK: - Error & Edge Cases
+    
+    func testInitWithNonExistentFile() {
+        let invalidURL = FileManager.default.temporaryDirectory.appendingPathComponent("NonExistent.ipa")
+        
+        XCTAssertThrowsError(try IPAParser(ipaURL: invalidURL)) { error in
+            guard let ipaError = error as? IPAParserError,
+                  case .templateIPANotFound = ipaError else {
+                XCTFail("Expected IPAParserError.templateIPANotFound, got \(error)")
+                return
+            }
+        }
+    }
+    
+    func testAppDirectoryNotFound() throws {
+        // Use the NoApp.ipa resource
+        guard let noAppIpaURL = Bundle.module.url(forResource: "NoApp", withExtension: "ipa") else {
+            XCTFail("NoApp.ipa not found in bundle")
+            return
+        }
+        
+        let parser = try IPAParser(ipaURL: noAppIpaURL)
+        XCTAssertThrowsError(try parser.appDirectory()) { error in
+            guard let ipaError = error as? IPAParserError,
+                  case .ipaInvalid = ipaError else {
+                XCTFail("Expected IPAParserError.ipaInvalid, got \(error)")
+                return
+            }
+        }
+    }
+    
+    func testReplaceBundleIDWithNil() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        
+        // Get original bundle ID
+        let appDir = try parser.appDirectory()
+        let infoPlist = appDir.appendingPathComponent("Info.plist")
+        let originalPlistParser = try PlistParser(url: infoPlist)
+        let originalBundleID = originalPlistParser.get(keyPath: "CFBundleIdentifier") as? String
+        
+        parser.replace(bundleID: nil)
+        
+        // Read it back and verify it's unchanged
+        let newPlistParser = try PlistParser(url: infoPlist)
+        XCTAssertEqual(newPlistParser.get(keyPath: "CFBundleIdentifier") as? String, originalBundleID)
+    }
+}

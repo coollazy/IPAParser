@@ -6,19 +6,25 @@ public class PlistParser {
     
     public init(url: URL) throws {
         self.url = url
+        let data: Data
         do {
-            let data = try Data(contentsOf: url)
+            data = try Data(contentsOf: url)
+        } catch {
+            debugPrint("⚠️⚠️ PlistParser Data(contentsOf:) error: \(error)")
+            // If data loading fails, it's a read error (e.g., file not found, permissions)
+            throw PlistParserError.readFailed(url)
+        }
+
+        do {
             guard let content = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
+                // If PropertyListSerialization succeeds but returns something that isn't a [String: Any]
                 throw PlistParserError.decodeContentFailed
             }
             self.content = content
-        }
-        catch let error as PlistParserError {
-            throw error
-        }
-        catch {
-            debugPrint("⚠️⚠️ PlistParser \(error)")
-            throw PlistParserError.readFailed(url)
+        } catch {
+            debugPrint("⚠️⚠️ PlistParser PropertyListSerialization error: \(error)")
+            // If PropertyListSerialization itself throws an error (e.g., malformed plist)
+            throw PlistParserError.decodeContentFailed
         }
     }
     
@@ -42,7 +48,7 @@ public class PlistParser {
     /// 設定巢狀 key，不存在的中間層會自動建立
     @discardableResult
     public func replace(keyPath: String, with value: Any?) -> Self {
-        var keys = keyPath.components(separatedBy: ".")
+        let keys = keyPath.components(separatedBy: ".")
         guard let firstKey = keys.first else { return self }
         
         if keys.count == 1 {
@@ -73,7 +79,7 @@ public class PlistParser {
     /// 移除巢狀 key，如果不存在則不做任何事
     @discardableResult
     public func remove(keyPath: String) -> Self {
-        var keys = keyPath.components(separatedBy: ".")
+        let keys = keyPath.components(separatedBy: ".")
         guard let firstKey = keys.first else { return self }
         
         if keys.count == 1 {
