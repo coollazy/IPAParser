@@ -40,15 +40,27 @@ public class IPAParser {
     
     /// App資料夾目錄
     public func appDirectory() throws -> URL {
-        let paths = try FileManager.default
-            .subpathsOfDirectory(atPath: unzipDirectoryURL.path)
-            .filter({ $0.hasSuffix(".app") && !$0.contains("__MACOSX") })
+        let fileManager = FileManager.default
         
-        guard let appSubPath = paths.first else {
-            throw IPAParserError.ipaInvalid
+        // 1. 優先策略：檢查 Payload 資料夾 (標準結構)
+        let payloadURL = unzipDirectoryURL.appendingPathComponent("Payload")
+        var isPayloadDir: ObjCBool = false
+        
+        // 如果 Payload 存在且是資料夾，就進去找
+        if fileManager.fileExists(atPath: payloadURL.path, isDirectory: &isPayloadDir), isPayloadDir.boolValue {
+            let contents = try fileManager.contentsOfDirectory(at: payloadURL, includingPropertiesForKeys: nil)
+            if let appURL = contents.first(where: { $0.pathExtension == "app" }) {
+                return appURL
+            }
         }
         
-        return unzipDirectoryURL.appendingPathComponent(appSubPath)
+        // 2. 備用策略：檢查根目錄 (非標準結構)
+        let rootContents = try fileManager.contentsOfDirectory(at: unzipDirectoryURL, includingPropertiesForKeys: nil)
+        if let appURL = rootContents.first(where: { $0.pathExtension == "app" }) {
+            return appURL
+        }
+        
+        throw IPAParserError.ipaInvalid
     }
     
     /// 壓縮成 IPA 到指令路徑
