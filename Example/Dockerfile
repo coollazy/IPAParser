@@ -3,7 +3,7 @@
 # ================================
 FROM swift:5.10-noble AS build
 
-WORKDIR /Image
+WORKDIR /IPAParser
 
 # 1. 複製整個專案上下文 (包含 Image 庫源碼和 Example 應用)
 COPY . .
