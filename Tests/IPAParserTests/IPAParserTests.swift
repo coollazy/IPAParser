@@ -40,6 +40,23 @@ final class IPAParserTests: XCTestCase {
         try? FileManager.default.removeItem(at: outputIPA)
     }
     
+    func testAppDirectoryWithFlatIPA() throws {
+        // Locate the Flat.ipa resource
+        guard let url = Bundle.module.url(forResource: "Flat", withExtension: "ipa") else {
+            XCTFail("Flat.ipa not found in bundle")
+            return
+        }
+        
+        let parser = try IPAParser(ipaURL: url)
+        let foundAppDirectory = try parser.appDirectory()
+        
+        XCTAssertTrue(foundAppDirectory.lastPathComponent == "FlatApp.app", "IPAParser should find 'FlatApp.app' in flat IPA")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: foundAppDirectory.appendingPathComponent("Info.plist").path), "Found .app in flat IPA should contain Info.plist")
+        
+        // Optionally, check if version parsing also works with this flat IPA
+        XCTAssertEqual(parser.version(), "1.0", "Should be able to parse version from flat IPA")
+    }
+    
     func testModifyBundleID() throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         let newBundleID = "com.test.modified"
