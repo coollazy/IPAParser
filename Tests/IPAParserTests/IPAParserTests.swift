@@ -103,6 +103,23 @@ final class IPAParserTests: XCTestCase {
         }
     }
     
+    func testNoInfoPlistInApp() throws {
+        // Locate the NoInfoPlist.ipa resource
+        guard let url = Bundle.module.url(forResource: "NoInfoPlist", withExtension: "ipa") else {
+            XCTFail("NoInfoPlist.ipa not found in bundle")
+            return
+        }
+        
+        // IPAParser 初始化應該成功，因為 .app 資料夾存在
+        let parser = try IPAParser(ipaURL: url)
+        
+        // appDirectory() 應該也能找到 .app 資料夾
+        XCTAssertNoThrow(try parser.appDirectory())
+        
+        // 嘗試獲取版本號，應該為 nil，因為沒有 Info.plist
+        XCTAssertNil(parser.version(), "version() should return nil when Info.plist is missing")
+    }
+    
     func testReplaceBundleIDWithNil() throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         
