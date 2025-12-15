@@ -61,30 +61,35 @@ final class IPAParserTests: XCTestCase {
         let parser = try IPAParser(ipaURL: ipaURL)
         let newBundleID = "com.test.modified"
         
+        // 驗證初始 bundleID (如果有的話)
+        _ = parser.bundleID() // 只是呼叫確保不會崩潰
+        
         parser.replace(bundleID: newBundleID)
         
-        // verify by checking the file on disk in the unzip directory
-        let appDir = try parser.appDirectory()
-        let infoPlist = appDir.appendingPathComponent("Info.plist")
+        // 驗證新的 bundleID
+        XCTAssertEqual(parser.bundleID(), newBundleID, "Bundle ID should be updated")
         
-        // Use PlistParser to read it back
-        let plistParser = try PlistParser(url: infoPlist)
-        XCTAssertEqual(plistParser.get(keyPath: "CFBundleIdentifier") as? String, newBundleID)
+        // 再次呼叫 replace with same value, 驗證冪等性 (間接)
+        // 應該會觸發內部 log 但不應再次修改檔案
+        parser.replace(bundleID: newBundleID) 
+        XCTAssertEqual(parser.bundleID(), newBundleID, "Bundle ID should remain the same after idempotent replace")
     }
     
     func testModifyDisplayName() throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         let newDisplayName = "Modified App Name"
         
+        // 驗證初始 displayName (如果有的話)
+        _ = parser.displayName() // 只是呼叫確保不會崩潰
+        
         parser.replace(displayName: newDisplayName)
         
-        // verify by checking the file on disk in the unzip directory
-        let appDir = try parser.appDirectory()
-        let infoPlist = appDir.appendingPathComponent("Info.plist")
+        // 驗證新的 displayName
+        XCTAssertEqual(parser.displayName(), newDisplayName, "Display Name should be updated")
         
-        // Use PlistParser to read it back
-        let plistParser = try PlistParser(url: infoPlist)
-        XCTAssertEqual(plistParser.get(keyPath: "CFBundleDisplayName") as? String, newDisplayName)
+        // 再次呼叫 replace with same value, 驗證冪等性 (間接)
+        parser.replace(displayName: newDisplayName)
+        XCTAssertEqual(parser.displayName(), newDisplayName, "Display Name should remain the same after idempotent replace")
     }
     
     // MARK: - Error & Edge Cases
