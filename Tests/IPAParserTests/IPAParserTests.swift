@@ -72,6 +72,21 @@ final class IPAParserTests: XCTestCase {
         XCTAssertEqual(plistParser.get(keyPath: "CFBundleIdentifier") as? String, newBundleID)
     }
     
+    func testModifyDisplayName() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let newDisplayName = "Modified App Name"
+        
+        parser.replace(displayName: newDisplayName)
+        
+        // verify by checking the file on disk in the unzip directory
+        let appDir = try parser.appDirectory()
+        let infoPlist = appDir.appendingPathComponent("Info.plist")
+        
+        // Use PlistParser to read it back
+        let plistParser = try PlistParser(url: infoPlist)
+        XCTAssertEqual(plistParser.get(keyPath: "CFBundleDisplayName") as? String, newDisplayName)
+    }
+    
     // MARK: - Error & Edge Cases
     
     func testInitWithNonExistentFile() {
