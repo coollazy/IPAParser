@@ -20,7 +20,7 @@ do {
     // Repackage the previously extracted folder into a new IPA
     try ipaParser.build(toPath: toPath)
     
-    print("Generate new assets.car with new icon successfully! ✅")
+    print("Generate new ipa successfully! ✅")
 }
 catch {
     print("error \(error)")
