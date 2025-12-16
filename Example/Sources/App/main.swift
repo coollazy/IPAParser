@@ -16,12 +16,13 @@ do {
     
     // Initialize IPAParser
     let ipaParser = try IPAParser(ipaURL: fromPath)
-
+    
     print("原始 IPA 版本號：\(ipaParser.version() ?? "N/A")")
     print("原始 IPA Build 號：\(ipaParser.buildNumber() ?? "N/A")")
     print("原始 IPA Bundle ID：\(ipaParser.bundleID() ?? "N/A")")
     print("原始 IPA Display Name：\(ipaParser.displayName() ?? "N/A")")
-
+    print("原始 IPA Executable Name：\(ipaParser.executableName() ?? "N/A")") // 只印出原始值
+    
     _ = ipaParser
         .replace(bundleID: "com.newtest.example")
         .replace(displayName: "新IPA")

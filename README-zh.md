@@ -56,6 +56,7 @@ print(parser.version())       // e.g. "1.0.0"
 print(parser.buildNumber())   // e.g. "1"
 print(parser.bundleID())      // e.g. "com.example.app"
 print(parser.displayName())   // e.g. "我的應用程式"
+print(parser.executableName())// e.g. "App" or "Example"
 ```
 
 - 修改並壓縮 IPA

@@ -49,8 +49,12 @@ public extension IPAParser {
     
     private func replace(localIconURL: URL) throws {
         let appDir = try appDirectory()
-        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
-        let plist = try PlistParser(url: infoPlistURL)
+        
+        // 使用 cache 的 PlistParser，如果 Info.plist 遺失則拋出錯誤
+        guard let plist = try getPlistParser() else {
+            throw IPAParserError.custom("Info.plist not found in App bundle")
+        }
+        
         let sourceImage = try Image(url: localIconURL)
         
         var isPlistModified = false

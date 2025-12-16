@@ -3,25 +3,17 @@ import PlistParser
 
 public extension IPAParser {
     func version() -> String? {
-        guard let infoPlistURL = try? appDirectory().appendingPathComponent("Info.plist") else {
-            return nil
-        }
-        return try? PlistParser(url: infoPlistURL).get(keyPath: "CFBundleShortVersionString") as? String
+        return try? getPlistParser()?.get(keyPath: "CFBundleShortVersionString") as? String
     }
 
     func buildNumber() -> String? {
-        guard let infoPlistURL = try? appDirectory().appendingPathComponent("Info.plist") else {
-            return nil
-        }
-        return try? PlistParser(url: infoPlistURL).get(keyPath: "CFBundleVersion") as? String
+        return try? getPlistParser()?.get(keyPath: "CFBundleVersion") as? String
     }
 
     @discardableResult
     func replace(version: String?) -> Self {
         do {
-            let appDir = try appDirectory()
-            let infoPlistURL = appDir.appendingPathComponent("Info.plist")
-            let plist = try PlistParser(url: infoPlistURL)
+            guard let plist = try getPlistParser() else { return self }
 
             let currentVersion = plist.get(keyPath: "CFBundleShortVersionString") as? String
             guard currentVersion != version else {
@@ -44,9 +36,7 @@ public extension IPAParser {
     @discardableResult
     func replace(buildNumber: String?) -> Self {
         do {
-            let appDir = try appDirectory()
-            let infoPlistURL = appDir.appendingPathComponent("Info.plist")
-            let plist = try PlistParser(url: infoPlistURL)
+            guard let plist = try getPlistParser() else { return self }
 
             let currentBuildNumber = plist.get(keyPath: "CFBundleVersion") as? String
             guard currentBuildNumber != buildNumber else {

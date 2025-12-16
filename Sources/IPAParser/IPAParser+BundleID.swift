@@ -3,10 +3,7 @@ import PlistParser
 public extension IPAParser {
     /// 取得 Bundle ID
     func bundleID() -> String? {
-        guard let infoPlistURL = try? appDirectory().appendingPathComponent("Info.plist") else {
-            return nil
-        }
-        return try? PlistParser(url: infoPlistURL).get(keyPath: "CFBundleIdentifier") as? String
+        return try? getPlistParser()?.get(keyPath: "CFBundleIdentifier") as? String
     }
     
     @discardableResult
@@ -22,11 +19,9 @@ public extension IPAParser {
         }
         
         do {
-            let infoPlistURL = try appDirectory().appendingPathComponent("Info.plist")
-            try PlistParser(url: infoPlistURL)
-                .replace(keyPath: "CFBundleIdentifier", with: bundleID)
-                .build()
-            
+            if let plist = try getPlistParser() {
+                try plist.replace(keyPath: "CFBundleIdentifier", with: bundleID).build()
+            }
             return self
         }
         catch {

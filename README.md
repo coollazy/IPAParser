@@ -55,6 +55,7 @@ print(parser.version())       // e.g. "1.0.0"
 print(parser.buildNumber())   // e.g. "1"
 print(parser.bundleID())      // e.g. "com.example.app"
 print(parser.displayName())   // e.g. "My App"
+print(parser.executableName())// e.g. "App" or "Example"
 ```
 
 - Modify and Build IPA
