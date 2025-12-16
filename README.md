@@ -8,12 +8,26 @@
 
 Parse and repackage IPA files.
 
+## Prerequisites
+
+IPAParser relies on **ImageMagick** for image processing (icon resizing). **This is only required if you plan to use the `replace(icon:)` feature.**
+
+- **macOS**:
+  ```bash
+  brew install imagemagick
+  ```
+
+- **Linux (Ubuntu/Debian)**:
+  ```bash
+  sudo apt-get install imagemagick
+  ```
+
 ## SPM Installation
 
 - Add to Package.swift dependencies:
 
 ```swift
-.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
+.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
 ```
 
 - Add to target dependencies:
@@ -45,9 +59,10 @@ print(parser.displayName())   // e.g. "My App"
 - Modify and Build IPA
 
 ```swift
-// Modify Bundle ID and Display Name in a chainable way
+// Modify Bundle ID, Display Name, and Icon in a chainable way
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "New App Name")
+      .replace(icon: URL(string: "path_to_new_icon.png")!) // Supports local path or remote URL
 
 // Repackage into a new IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
@@ -68,3 +83,7 @@ try PlistParser(url: infoPlistURL)
     .replace(keyPath: "CFBundleDisplayName", with: "New App Name")
     .build(toPlistURL: infoPlistURL)
 ```
+
+## Docker Support
+
+For instructions on how to build and run the example project using Docker (which handles all dependencies automatically), please refer to [Example/README.md](Example/README.md).

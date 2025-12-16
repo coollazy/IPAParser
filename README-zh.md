@@ -9,12 +9,26 @@
 
 解析及重新封裝 IPA
 
+## 前置需求
+
+IPAParser 依賴 **ImageMagick** 進行圖片處理（Icon 縮放）。**僅在您需要使用 `replace(icon:)` 功能時才需要安裝。**
+
+- **macOS**:
+  ```bash
+  brew install imagemagick
+  ```
+
+- **Linux (Ubuntu/Debian)**:
+  ```bash
+  sudo apt-get install imagemagick
+  ```
+
 ## SPM安裝
 
 - Package.swift 的 dependencies 增加
 
 ```swift
-.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
+.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
 ```
 
 - target 的 dependencies 增加
@@ -49,6 +63,7 @@ print(parser.displayName())   // e.g. "我的應用程式"
 // 支援鏈式調用，一次修改多個屬性
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "新的 App 名稱")
+      .replace(icon: URL(string: "path_to_new_icon.png")!) // 支援本地路徑或遠端 URL
 
 // 將修改後的內容重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
@@ -69,3 +84,7 @@ try PlistParser(url: infoPlistURL)
     .replace(keyPath: "CFBundleDisplayName", with: "App新的顯示名稱")
     .build(toPlistURL: infoPlistURL)
 ```
+
+## Docker 支援
+
+關於如何使用 Docker 建構與執行範例專案（自動處理所有依賴），請參閱 [Example/README.md](Example/README.md)。

@@ -36,6 +36,12 @@ swift build --product App --package-path Example --configuration release
 
 此範例也包含一個 `Dockerfile`，用於在 Docker 容器內建構和執行應用程式，以驗證其與 Linux 環境的兼容性。
 
+#### 系統依賴 (System Dependencies)
+
+Dockerfile 會自動安裝以下執行時所需的依賴庫：
+*   **ImageMagick (`imagemagick`)**: 用於 `IPAParser` 的圖示縮放功能 (`replace(icon:)`)。
+*   **libcurl (`libcurl4`)**: 用於 Swift 的 `FoundationNetworking` (URLSession) 支援。
+
 #### 建構 Docker 映像
 
 **注意：必須從專案根目錄執行此命令，以確保 Docker context 包含完整的專案源碼。**
