@@ -52,6 +52,7 @@ let appDirectory = try parser.appDirectory()
 
 // Query Metadata
 print(parser.version())       // e.g. "1.0.0"
+print(parser.buildNumber())   // e.g. "1"
 print(parser.bundleID())      // e.g. "com.example.app"
 print(parser.displayName())   // e.g. "My App"
 ```
@@ -59,9 +60,11 @@ print(parser.displayName())   // e.g. "My App"
 - Modify and Build IPA
 
 ```swift
-// Modify Bundle ID, Display Name, and Icon in a chainable way
+// Modify Bundle ID, Display Name, Version, Build Number, and Icon in a chainable way
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "New App Name")
+      .replace(version: "2.0.0")
+      .replace(buildNumber: "200")
       .replace(icon: URL(string: "path_to_new_icon.png")!) // Supports local path or remote URL
 
 // Repackage into a new IPA

@@ -206,4 +206,44 @@ final class IPAParserTests: XCTestCase {
              XCTAssertFalse(pngs.isEmpty, "Should contain at least one PNG icon file after replacement")
         }
     }
+
+    // MARK: - Version & Build Number Tests
+
+    func testVersionAndBuildNumberGetters() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        XCTAssertEqual(parser.version(), "1.0", "Initial version should be 1.0")
+        XCTAssertEqual(parser.buildNumber(), "1", "Initial build number should be 1")
+    }
+
+    func testReplaceVersion() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let newVersion = "2.0.0"
+
+        parser.replace(version: newVersion)
+        XCTAssertEqual(parser.version(), newVersion, "Version should be updated")
+
+        // Test idempotency
+        parser.replace(version: newVersion)
+        XCTAssertEqual(parser.version(), newVersion, "Version should remain the same after idempotent replace")
+
+        // Test setting to nil (remove key)
+        parser.replace(version: nil)
+        XCTAssertNil(parser.version(), "Version should be nil after removal")
+    }
+
+    func testReplaceBuildNumber() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let newBuildNumber = "200"
+
+        parser.replace(buildNumber: newBuildNumber)
+        XCTAssertEqual(parser.buildNumber(), newBuildNumber, "Build number should be updated")
+
+        // Test idempotency
+        parser.replace(buildNumber: newBuildNumber)
+        XCTAssertEqual(parser.buildNumber(), newBuildNumber, "Build number should remain the same after idempotent replace")
+
+        // Test setting to nil (remove key)
+        parser.replace(buildNumber: nil)
+        XCTAssertNil(parser.buildNumber(), "Build number should be nil after removal")
+    }
 }

@@ -53,6 +53,7 @@ let appDirectory = try parser.appDirectory()
 
 // 查詢資訊
 print(parser.version())       // e.g. "1.0.0"
+print(parser.buildNumber())   // e.g. "1"
 print(parser.bundleID())      // e.g. "com.example.app"
 print(parser.displayName())   // e.g. "我的應用程式"
 ```
@@ -60,9 +61,11 @@ print(parser.displayName())   // e.g. "我的應用程式"
 - 修改並壓縮 IPA
 
 ```swift
-// 支援鏈式調用，一次修改多個屬性
+// 支援鏈式調用，一次修改多個屬性，包含 Bundle ID, 顯示名稱, 版本號, Build Number 及 Icon
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "新的 App 名稱")
+      .replace(version: "2.0.0")
+      .replace(buildNumber: "200")
       .replace(icon: URL(string: "path_to_new_icon.png")!) // 支援本地路徑或遠端 URL
 
 // 將修改後的內容重新壓縮成 IPA
