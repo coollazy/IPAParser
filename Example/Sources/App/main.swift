@@ -10,10 +10,15 @@ do {
         .appendingPathComponent("output")
         .appendingPathComponent("NewExample.ipa")
     
+    let iconURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        .appendingPathComponent("Resources")
+        .appendingPathComponent("test_icon.png")
+    
     // Initialize IPAParser
     let ipaParser = try IPAParser(ipaURL: fromPath)
         .replace(bundleID: "com.newtest.example")
         .replace(displayName: "新IPA")
+        .replace(icon: iconURL)
     
     print("IPA 版本號：\(ipaParser.version() ?? "無法識別版本號")")
     
