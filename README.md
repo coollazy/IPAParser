@@ -27,7 +27,7 @@ IPAParser relies on **ImageMagick** for image processing (icon resizing). **This
 - Add to Package.swift dependencies:
 
 ```swift
-.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
+.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.2.0"),
 ```
 
 - Add to target dependencies:
