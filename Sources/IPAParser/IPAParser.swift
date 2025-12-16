@@ -84,9 +84,16 @@ public class IPAParser {
         }
         
         // 將暫存檔案複製到指定的位置
-        if FileManager.default.fileExists(atPath: toPath.deletingLastPathComponent().path) == false {
-            try FileManager.default.createDirectory(at: toPath.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+        let destinationDir = toPath.deletingLastPathComponent()
+        if FileManager.default.fileExists(atPath: destinationDir.path) == false {
+            try FileManager.default.createDirectory(at: destinationDir, withIntermediateDirectories: true, attributes: nil)
         }
+        
+        // 如果目標檔案已存在，先刪除
+        if FileManager.default.fileExists(atPath: toPath.path) {
+            try FileManager.default.removeItem(at: toPath)
+        }
+        
         try FileManager.default.copyItem(at: modifiedArchiveFileLocation, to: toPath)
     }
 }
