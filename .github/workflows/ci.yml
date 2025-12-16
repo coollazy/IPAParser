@@ -21,8 +21,42 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Install dependencies
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y imagemagick
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install imagemagick
+          fi
+        shell: bash
+
       - name: Resolve dependencies
         run: swift package resolve
 
       - name: Build
         run: swift build --configuration release
+
+      - name: Test
+        run: swift test
+
+      - name: Docker Build & Run Verification
+        if: runner.os == 'Linux'
+        run: |
+          echo "--- Starting Docker Build & Run Verification ---"
+          
+          # 1. Build the Docker image using the project root as context
+          #    -t: Tag the image with a name (image-example:ci)
+          #    -f Example/Dockerfile: Specify the Dockerfile to use
+          #    .: Use the current directory (project root) as the build context
+          docker build -t ipaparser-example:ci -f Example/Dockerfile .
+          
+          # 2. Run the container and capture its output/exit code
+          #    --rm: Automatically remove the container when it exits
+          #    image-example:ci: The name of the image to run
+          #
+          #    The Example app is designed to exit with code 0 on success.
+          #    If it crashes or fails (e.g., ImageMagick not found, logic error),
+          #    docker run will return a non-zero exit code, causing this CI step to fail.
+          docker run --rm ipaparser-example:ci
+          
+          echo "--- Docker Build & Run Verification Finished ---"

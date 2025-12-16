@@ -40,15 +40,27 @@ public class IPAParser {
     
     /// App資料夾目錄
     public func appDirectory() throws -> URL {
-        let paths = try FileManager.default
-            .subpathsOfDirectory(atPath: unzipDirectoryURL.path)
-            .filter({ $0.hasSuffix(".app") })
+        let fileManager = FileManager.default
         
-        guard let appSubPath = paths.first else {
-            throw IPAParserError.ipaInvalid
+        // 1. 優先策略：檢查 Payload 資料夾 (標準結構)
+        let payloadURL = unzipDirectoryURL.appendingPathComponent("Payload")
+        var isPayloadDir: ObjCBool = false
+        
+        // 如果 Payload 存在且是資料夾，就進去找
+        if fileManager.fileExists(atPath: payloadURL.path, isDirectory: &isPayloadDir), isPayloadDir.boolValue {
+            let contents = try fileManager.contentsOfDirectory(at: payloadURL, includingPropertiesForKeys: nil)
+            if let appURL = contents.first(where: { $0.pathExtension == "app" }) {
+                return appURL
+            }
         }
         
-        return unzipDirectoryURL.appendingPathComponent(appSubPath)
+        // 2. 備用策略：檢查根目錄 (非標準結構)
+        let rootContents = try fileManager.contentsOfDirectory(at: unzipDirectoryURL, includingPropertiesForKeys: nil)
+        if let appURL = rootContents.first(where: { $0.pathExtension == "app" }) {
+            return appURL
+        }
+        
+        throw IPAParserError.ipaInvalid
     }
     
     /// 壓縮成 IPA 到指令路徑
@@ -72,9 +84,16 @@ public class IPAParser {
         }
         
         // 將暫存檔案複製到指定的位置
-        if FileManager.default.fileExists(atPath: toPath.deletingLastPathComponent().path) == false {
-            try FileManager.default.createDirectory(at: toPath.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+        let destinationDir = toPath.deletingLastPathComponent()
+        if FileManager.default.fileExists(atPath: destinationDir.path) == false {
+            try FileManager.default.createDirectory(at: destinationDir, withIntermediateDirectories: true, attributes: nil)
         }
+        
+        // 如果目標檔案已存在，先刪除
+        if FileManager.default.fileExists(atPath: toPath.path) {
+            try FileManager.default.removeItem(at: toPath)
+        }
+        
         try FileManager.default.copyItem(at: modifiedArchiveFileLocation, to: toPath)
     }
 }

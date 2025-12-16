@@ -4,6 +4,7 @@ public enum IPAParserError: Error, CustomStringConvertible, LocalizedError {
     case templateIPANotFound(String)
     case ipaInvalid
     case zipFailed
+    case custom(String)
     
     public var description: String {
         switch self {
@@ -13,6 +14,8 @@ public enum IPAParserError: Error, CustomStringConvertible, LocalizedError {
             return NSLocalizedString("IPAParser can't find any *.app in template IPA !!", comment: "")
         case .zipFailed:
             return NSLocalizedString("IPAParser zip IPA failed !!", comment: "")
+        case .custom(let message):
+            return NSLocalizedString(message, comment: "")
         }
     }
     

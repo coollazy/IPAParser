@@ -8,12 +8,26 @@
 
 Parse and repackage IPA files.
 
+## Prerequisites
+
+IPAParser relies on **ImageMagick** for image processing (icon resizing). **This is only required if you plan to use the `replace(icon:)` feature.**
+
+- **macOS**:
+  ```bash
+  brew install imagemagick
+  ```
+
+- **Linux (Ubuntu/Debian)**:
+  ```bash
+  sudo apt-get install imagemagick
+  ```
+
 ## SPM Installation
 
 - Add to Package.swift dependencies:
 
 ```swift
-.package(name: "IPAParser", url: "https://github.com/coollazy/IPAParser.git", from: "1.1.1"),
+.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.2.0"),
 ```
 
 - Add to target dependencies:
@@ -26,36 +40,53 @@ Parse and repackage IPA files.
 
 ### IPAParser
 
-- Initialize Builder with IPA
+- Initialize and Query Metadata
 
 ```swift
 // Initialize IPAParser
 let ipaTemplatePath = URL(string: "path_to_your_ipa")!
-let ipaParser = try IPAParser(ipaURL: ipaTemplatePath)
+let parser = try IPAParser(ipaURL: ipaTemplatePath)
 
-// Get the path to the folder containing the extracted IPA contents
-let appDirectory = try ipaParser.appDirectory()
+// Get App Directory
+let appDirectory = try parser.appDirectory()
+
+// Query Metadata
+print(parser.version())       // e.g. "1.0.0"
+print(parser.buildNumber())   // e.g. "1"
+print(parser.bundleID())      // e.g. "com.example.app"
+print(parser.displayName())   // e.g. "My App"
 ```
 
-- Build IPA
+- Modify and Build IPA
 
 ```swift
-// Repackage the previously extracted folder into a new IPA
+// Modify Bundle ID, Display Name, Version, Build Number, and Icon in a chainable way
+parser.replace(bundleID: "com.new.id")
+      .replace(displayName: "New App Name")
+      .replace(version: "2.0.0")
+      .replace(buildNumber: "200")
+      .replace(icon: URL(string: "path_to_new_icon.png")!) // Supports local path or remote URL
+
+// Repackage into a new IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
-try ipaParser.build(toPath: toURL)
+try parser.build(toPath: toURL)
 ```
 
 ### PlistParser
 
-- Modify Info.plist file
+- Modify Info.plist file directly
 
 ```swift
-// Path to the XXX.app folder, usually obtained from IPAParser's appDirectory
-let toAppDirectory = URL(string: "path_to_app_want_to_place")!
+// Path to the Info.plist file
+let infoPlistURL = URL(string: "path/to/Payload/App.app/Info.plist")!
 
-// Replace the value for the specified key in Info.plist and write directly to the file
-try PlistParser()
-	.replace(key: "CFBundleIdentifier", with: "com.new.bundle.id")
-	.replace(key: "CFBundleDisplayName", with: "App新的顯示名稱")
-	.build(toPlistURL: toAppDirectory.appendingPathComponent("Info.plist"))
+// Replace values and write back to file
+try PlistParser(url: infoPlistURL)
+    .replace(keyPath: "CFBundleIdentifier", with: "com.new.bundle.id")
+    .replace(keyPath: "CFBundleDisplayName", with: "New App Name")
+    .build(toPlistURL: infoPlistURL)
 ```
+
+## Docker Support
+
+For instructions on how to build and run the example project using Docker (which handles all dependencies automatically), please refer to [Example/README.md](Example/README.md).

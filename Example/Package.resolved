@@ -1,6 +1,15 @@
 {
   "pins" : [
     {
+      "identity" : "image",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/coollazy/Image.git",
+      "state" : {
+        "revision" : "9d4fa257ba730586ed5acadbbf8b157b471fd179",
+        "version" : "1.2.1"
+      }
+    },
+    {
       "identity" : "zipfoundation",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/coollazy/ZIPFoundation.git",
