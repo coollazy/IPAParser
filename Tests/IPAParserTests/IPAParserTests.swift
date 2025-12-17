@@ -246,4 +246,9 @@ final class IPAParserTests: XCTestCase {
         parser.replace(buildNumber: nil)
         XCTAssertNil(parser.buildNumber(), "Build number should be nil after removal")
     }
+
+    func testExecutableName() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        XCTAssertEqual(parser.executableName(), "Example", "Executable name should be 'Example'")
+    }
 }

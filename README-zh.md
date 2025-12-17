@@ -28,7 +28,7 @@ IPAParser 依賴 **ImageMagick** 進行圖片處理（Icon 縮放）。**僅在�
 - Package.swift 的 dependencies 增加
 
 ```swift
-.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.2.0"),
+.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.2.1"),
 ```
 
 - target 的 dependencies 增加
@@ -56,6 +56,7 @@ print(parser.version())       // e.g. "1.0.0"
 print(parser.buildNumber())   // e.g. "1"
 print(parser.bundleID())      // e.g. "com.example.app"
 print(parser.displayName())   // e.g. "我的應用程式"
+print(parser.executableName())// e.g. "App" or "Example"
 ```
 
 - 修改並壓縮 IPA

@@ -1,10 +1,13 @@
 import Foundation
 import ZIPFoundation
+import PlistParser
 
 /// 將 IPA 解壓縮，並提供 AppDirectory
 /// 呼叫 build 重新壓縮成 IPA 到指令路徑
 public class IPAParser {
     let ipaURL: URL
+    
+    private var _plistParser: PlistParser?
     
     public let workingDirectory: URL = FileManager.default.temporaryDirectory
         .appendingPathComponent("IPAParser")
@@ -36,6 +39,24 @@ public class IPAParser {
             try FileManager.default.createDirectory(at: unzipDirectoryURL, withIntermediateDirectories: true, attributes: nil)
         }
         try FileManager.default.unzipItem(at: ipaURL, to: unzipDirectoryURL)
+    }
+    
+    /// 取得 PlistParser 實例 (Lazy Load)
+    public func getPlistParser() throws -> PlistParser? {
+        if let parser = _plistParser {
+            return parser
+        }
+        
+        let appDir = try appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        
+        guard FileManager.default.fileExists(atPath: infoPlistURL.path) else {
+            return nil
+        }
+        
+        let parser = try PlistParser(url: infoPlistURL)
+        _plistParser = parser
+        return parser
     }
     
     /// App資料夾目錄
