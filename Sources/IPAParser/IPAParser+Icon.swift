@@ -12,7 +12,11 @@ public extension IPAParser {
     /// - Note: 若為遠端 URL，會先下載至暫存區，處理完後自動刪除。
     ///         若過程中發生錯誤 (如下載失敗、找不到檔案)，僅會印出警告，不會拋出錯誤，以維持鏈式呼叫。
     @discardableResult
-    func replace(icon: URL) -> Self {
+    func replace(icon: URL?) -> Self {
+        guard let icon = icon else {
+            return self
+        }
+        
         do {
             // 1. 判斷 URL 類型
             if icon.isFileURL {
