@@ -70,6 +70,7 @@ parser.replace(bundleID: "com.new.id")
       .apply(GoogleComponent(appKey: "123456789-abc.apps.googleusercontent.com")) // Apply third-party config (Google Sign-In)
       .apply(FacebookComponent(appID: "987654321", clientToken: "xyz123abc", displayName: "My FB App")) // Apply third-party config (Facebook SDK)
       .apply(QQComponent(appID: "100424468")) // Apply third-party config (QQ SDK)
+      .apply(WeChatComponent(appID: "wx1234567890abcdef")) // Apply third-party config (WeChat SDK)
 
 // Repackage into a new IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!

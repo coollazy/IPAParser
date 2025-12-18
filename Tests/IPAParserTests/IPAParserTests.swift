@@ -616,4 +616,128 @@ final class IPAParserTests: XCTestCase {
         let updatedParser = try PlistParser(url: infoPlistURL)
         XCTAssertEqual(updatedParser.get(keyPath: "QQAppID") as? String, initialQQID)
     }
+
+    // MARK: - WeChat Component Tests
+
+    func testApplyWeChatComponent() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appID = "wx1234567890abcdef"
+        
+        parser.apply(WeChatComponent(appID: appID))
+        
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        let urlTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        // Verify Scheme exists
+        let hasWeChat = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(appID)
+        }
+        XCTAssertTrue(hasWeChat, "CFBundleURLTypes should contain the WeChat URL Scheme")
+        
+        // Verify Name is set (since it's a new entry)
+        let hasName = urlTypes.contains { type in
+            return (type["CFBundleURLName"] as? String) == "com.wechat"
+        }
+        XCTAssertTrue(hasName, "New WeChat entry should have CFBundleURLName set to com.wechat")
+    }
+    
+    func testApplyWeChatComponentUpdateByName() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        // 1. Setup initial state: Entry with Name but old Scheme
+        let oldID = "wxOLD"
+        let initialURLTypes: [[String: Any]] = [
+            [
+                "CFBundleTypeRole": "Editor",
+                "CFBundleURLName": "com.wechat",
+                "CFBundleURLSchemes": [oldID]
+            ]
+        ]
+        plistParser.replace(keyPath: "CFBundleURLTypes", with: initialURLTypes)
+        try plistParser.build()
+        
+        // 2. Apply new ID
+        let newID = "wxNEW"
+        parser.apply(WeChatComponent(appID: newID))
+        
+        // 3. Verify
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let updatedURLTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        guard let targetEntry = updatedURLTypes.first(where: { ($0["CFBundleURLName"] as? String) == "com.wechat" }) else {
+            XCTFail("Should find entry with Name com.wechat")
+            return
+        }
+        
+        let schemes = targetEntry["CFBundleURLSchemes"] as? [String] ?? []
+        XCTAssertTrue(schemes.contains(newID), "Should contain new ID")
+        XCTAssertFalse(schemes.contains(oldID), "Should remove old ID")
+    }
+    
+    func testApplyWeChatComponentUpdateByScheme() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        // 1. Setup initial state: Entry WITHOUT Name but with wx Scheme
+        let oldID = "wxOLD_NO_NAME"
+        let initialURLTypes: [[String: Any]] = [
+            [
+                "CFBundleTypeRole": "Editor",
+                // No Name
+                "CFBundleURLSchemes": [oldID]
+            ]
+        ]
+        plistParser.replace(keyPath: "CFBundleURLTypes", with: initialURLTypes)
+        try plistParser.build()
+        
+        // 2. Apply new ID
+        let newID = "wxNEW"
+        parser.apply(WeChatComponent(appID: newID))
+        
+        // 3. Verify
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let updatedURLTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        let hasNewID = updatedURLTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(newID)
+        }
+        XCTAssertTrue(hasNewID, "Should update the entry containing old wx scheme")
+        
+        let hasOldID = updatedURLTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(oldID)
+        }
+        XCTAssertFalse(hasOldID, "Should remove old wx scheme")
+    }
+    
+    func testApplyWeChatComponentWithNil() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        
+        // Initial state
+        let plistParser = try PlistParser(url: infoPlistURL)
+        let initialTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]]
+        
+        // Apply nil
+        parser.apply(WeChatComponent(appID: nil))
+        
+        // Verify unchanged
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let currentTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]]
+        
+        // Simple count check or equality check (assuming PlistParser returns consistent types)
+        // Here we just check if nil apply didn't crash and count is same
+        XCTAssertEqual(initialTypes?.count ?? 0, currentTypes?.count ?? 0)
+    }
 }
