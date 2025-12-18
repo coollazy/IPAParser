@@ -251,4 +251,171 @@ final class IPAParserTests: XCTestCase {
         let parser = try IPAParser(ipaURL: ipaURL)
         XCTAssertEqual(parser.executableName(), "Example", "Executable name should be 'Example'")
     }
+
+    // MARK: - Google App Key Tests
+
+    func testReplaceGoogleAppKey() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let newKey = "1234567890-abcdefg.apps.googleusercontent.com"
+        let expectedScheme = "com.googleusercontent.apps.1234567890-abcdefg"
+        parser.apply(GoogleComponent(appKey: newKey))
+
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+
+        // Verify GIDClientID
+        XCTAssertEqual(plistParser.get(keyPath: "GIDClientID") as? String, newKey)
+
+        // Verify CFBundleURLSchemes
+        let urlTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        let hasScheme = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedScheme)
+        }
+        XCTAssertTrue(hasScheme, "CFBundleURLTypes should contain the reversed Google App Key scheme")
+    }
+
+    func testReplaceGoogleAppKeyWithInvalidFormat() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let invalidKey = "invalid-key-format"
+
+        // Get initial state
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let initialParser = try PlistParser(url: infoPlistURL)
+        let initialClientID = initialParser.get(keyPath: "GIDClientID") as? String
+
+        parser.apply(GoogleComponent(appKey: invalidKey))
+
+        // Verify no change
+        let currentParser = try PlistParser(url: infoPlistURL)
+        XCTAssertEqual(currentParser.get(keyPath: "GIDClientID") as? String, initialClientID)
+    }
+
+    func testReplaceGoogleAppKeyWithNil() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+
+        // Get initial state
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let initialParser = try PlistParser(url: infoPlistURL)
+        let initialClientID = initialParser.get(keyPath: "GIDClientID") as? String
+
+        parser.apply(GoogleComponent(appKey: nil))
+
+        // Verify no change
+        let currentParser = try PlistParser(url: infoPlistURL)
+        XCTAssertEqual(currentParser.get(keyPath: "GIDClientID") as? String, initialClientID)
+    }
+
+    func testReplaceGoogleAppKeyWithExistingSchemes() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+
+        // 1. Setup initial state with a mixed scheme entry
+        let oldGoogleScheme = "com.googleusercontent.apps.old-key"
+        let otherScheme = "fb123456"
+        let initialURLTypes: [[String: Any]] = [
+            [
+                "CFBundleTypeRole": "Editor",
+                "CFBundleURLSchemes": [otherScheme, oldGoogleScheme]
+            ]
+        ]
+        plistParser.replace(keyPath: "CFBundleURLTypes", with: initialURLTypes)
+        try plistParser.build()
+
+        // 2. Perform replacement
+        let newKey = "9876543210-zyxwvut.apps.googleusercontent.com"
+        let expectedNewScheme = "com.googleusercontent.apps.9876543210-zyxwvut"
+        parser.apply(GoogleComponent(appKey: newKey))
+
+        // 3. Verify
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let updatedURLTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+
+        guard let targetEntry = updatedURLTypes.first(where: { entry in
+            guard let schemes = entry["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedNewScheme)
+        }) else {
+            XCTFail("Could not find URL Type entry with new Google Scheme")
+            return
+        }
+
+        let schemes = targetEntry["CFBundleURLSchemes"] as? [String] ?? []
+        XCTAssertTrue(schemes.contains(otherScheme), "Should preserve other existing schemes (e.g., FB)")
+        XCTAssertFalse(schemes.contains(oldGoogleScheme), "Should remove old Google Scheme")
+        XCTAssertTrue(schemes.contains(expectedNewScheme), "Should contain new Google Scheme")
+    }
+
+    func testReplaceGoogleAppKeyAddsSchemeIfMissing() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+
+        // 1. Ensure clean slate (no Google schemes)
+        plistParser.remove(keyPath: "CFBundleURLTypes")
+        try plistParser.build()
+
+        // 2. Perform replacement
+        let newKey = "5555555555-abcde.apps.googleusercontent.com"
+        let expectedScheme = "com.googleusercontent.apps.5555555555-abcde"
+        parser.apply(GoogleComponent(appKey: newKey))
+
+        // 3. Verify
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let updatedURLTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        let hasScheme = updatedURLTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedScheme)
+        }
+        XCTAssertTrue(hasScheme, "Should add a new entry for Google Scheme if none existed")
+    }
+
+    func testUpdateExistingGoogleAppKey() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        
+        // 1. Set initial key (Key A)
+        let keyA = "1111111111-aaaaa.apps.googleusercontent.com"
+        let schemeA = "com.googleusercontent.apps.1111111111-aaaaa"
+        parser.apply(GoogleComponent(appKey: keyA))
+        
+        // Verify Key A is set
+        var plistParser = try PlistParser(url: infoPlistURL)
+        XCTAssertEqual(plistParser.get(keyPath: "GIDClientID") as? String, keyA)
+        
+        // 2. Update to new key (Key B)
+        let keyB = "2222222222-bbbbb.apps.googleusercontent.com"
+        let schemeB = "com.googleusercontent.apps.2222222222-bbbbb"
+        parser.apply(GoogleComponent(appKey: keyB))
+        
+        // 3. Verify Key B is set and Key A is gone
+        plistParser = try PlistParser(url: infoPlistURL) // Reload content
+        
+        // Check GIDClientID
+        XCTAssertEqual(plistParser.get(keyPath: "GIDClientID") as? String, keyB, "GIDClientID should be updated to Key B")
+        
+        // Check CFBundleURLSchemes
+        let urlTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        // Ensure Key B scheme exists
+        let hasSchemeB = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(schemeB)
+        }
+        XCTAssertTrue(hasSchemeB, "CFBundleURLTypes should contain the new Key B scheme")
+        
+        // Ensure Key A scheme is gone
+        let hasSchemeA = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(schemeA)
+        }
+        XCTAssertFalse(hasSchemeA, "CFBundleURLTypes should NO LONGER contain the old Key A scheme")
+    }
 }

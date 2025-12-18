@@ -62,12 +62,13 @@ print(parser.executableName())// e.g. "App" or "Example"
 - 修改並壓縮 IPA
 
 ```swift
-// 支援鏈式調用，一次修改多個屬性，包含 Bundle ID, 顯示名稱, 版本號, Build Number 及 Icon
+// 支援鏈式調用，一次修改多個屬性，包含 Bundle ID, 顯示名稱, 版本號, Build Number, Icon 及第三方配置
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "新的 App 名稱")
       .replace(version: "2.0.0")
       .replace(buildNumber: "200")
       .replace(icon: URL(string: "path_to_new_icon.png")!) // 支援本地路徑或遠端 URL
+      .apply(GoogleComponent(appKey: "123456789-abc.apps.googleusercontent.com")) // 套用第三方配置 (Google Sign-In)
 
 // 將修改後的內容重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!

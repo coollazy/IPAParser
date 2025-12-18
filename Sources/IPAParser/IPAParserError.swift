@@ -5,6 +5,10 @@ public enum IPAParserError: Error, CustomStringConvertible, LocalizedError {
     case ipaInvalid
     case zipFailed
     case custom(String)
+    case infoPlistNotFound
+    case invalidGoogleAppKey
+    case googleAppKeyNotFound
+    case googleURLSchemeNotFound
     
     public var description: String {
         switch self {
@@ -16,6 +20,14 @@ public enum IPAParserError: Error, CustomStringConvertible, LocalizedError {
             return NSLocalizedString("IPAParser zip IPA failed !!", comment: "")
         case .custom(let message):
             return NSLocalizedString(message, comment: "")
+        case .infoPlistNotFound:
+            return NSLocalizedString("IPAParser can't find Info.plist !!", comment: "")
+        case .invalidGoogleAppKey:
+            return NSLocalizedString("IPAParser invalid google app key format", comment: "")
+        case .googleAppKeyNotFound:
+            return NSLocalizedString("IPAParser google app key (GIDClientID) not found", comment: "")
+        case .googleURLSchemeNotFound:
+            return NSLocalizedString("IPAParser google URL Scheme not found in CFBundleURLTypes", comment: "")
         }
     }
     

@@ -61,12 +61,13 @@ print(parser.executableName())// e.g. "App" or "Example"
 - Modify and Build IPA
 
 ```swift
-// Modify Bundle ID, Display Name, Version, Build Number, and Icon in a chainable way
+// Modify Bundle ID, Display Name, Version, Build Number, Icon, and Third-party Configs in a chainable way
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "New App Name")
       .replace(version: "2.0.0")
       .replace(buildNumber: "200")
       .replace(icon: URL(string: "path_to_new_icon.png")!) // Supports local path or remote URL
+      .apply(GoogleComponent(appKey: "123456789-abc.apps.googleusercontent.com")) // Apply third-party config (Google Sign-In)
 
 // Repackage into a new IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
