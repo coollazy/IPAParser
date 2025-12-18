@@ -740,4 +740,87 @@ final class IPAParserTests: XCTestCase {
         // Here we just check if nil apply didn't crash and count is same
         XCTAssertEqual(initialTypes?.count ?? 0, currentTypes?.count ?? 0)
     }
+
+    // MARK: - LinkDeep Component Tests
+
+    func testApplyLinkDeepComponent() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appKey = "linkdeep_app_key_123"
+        let groupKey = "linkdeep_group_key_456"
+        
+        parser.apply(LinkDeepComponent(appKey: appKey, groupKey: groupKey))
+        
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        let urlTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        // Verify App Key
+        let hasAppKey = urlTypes.contains { type in
+            guard (type["CFBundleURLName"] as? String) == "com.link-deep.appkey" else { return false }
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(appKey)
+        }
+        XCTAssertTrue(hasAppKey, "Should contain LinkDeep App Key entry")
+        
+        // Verify Group Key
+        let hasGroupKey = urlTypes.contains { type in
+            guard (type["CFBundleURLName"] as? String) == "com.link-deep.groupkey" else { return false }
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(groupKey)
+        }
+        XCTAssertTrue(hasGroupKey, "Should contain LinkDeep Group Key entry")
+    }
+    
+    func testApplyLinkDeepComponentUpdate() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        // 1. Setup initial state
+        let oldAppKey = "old_app_key"
+        let initialURLTypes: [[String: Any]] = [
+            [
+                "CFBundleTypeRole": "Editor",
+                "CFBundleURLName": "com.link-deep.appkey",
+                "CFBundleURLSchemes": [oldAppKey]
+            ]
+        ]
+        plistParser.replace(keyPath: "CFBundleURLTypes", with: initialURLTypes)
+        try plistParser.build()
+        
+        // 2. Update
+        let newAppKey = "new_app_key"
+        parser.apply(LinkDeepComponent(appKey: newAppKey))
+        
+        // 3. Verify
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let updatedURLTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        let targetEntry = updatedURLTypes.first { ($0["CFBundleURLName"] as? String) == "com.link-deep.appkey" }
+        let schemes = targetEntry?["CFBundleURLSchemes"] as? [String] ?? []
+        
+        XCTAssertTrue(schemes.contains(newAppKey), "Should update to new App Key")
+        XCTAssertFalse(schemes.contains(oldAppKey), "Should remove old App Key")
+    }
+    
+    func testApplyLinkDeepComponentWithNil() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        
+        let plistParser = try PlistParser(url: infoPlistURL)
+        let initialTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]]
+        
+        // Apply nil
+        parser.apply(LinkDeepComponent(appKey: nil, groupKey: nil))
+        
+        // Verify unchanged
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let currentTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]]
+        
+        XCTAssertEqual(initialTypes?.count ?? 0, currentTypes?.count ?? 0)
+    }
 }

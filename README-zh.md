@@ -72,6 +72,7 @@ parser.replace(bundleID: "com.new.id")
       .apply(FacebookComponent(appID: "987654321", clientToken: "xyz123abc", displayName: "我的 FB 應用程式")) // 套用第三方配置 (Facebook SDK)
       .apply(QQComponent(appID: "100424468")) // 套用第三方配置 (QQ SDK)
       .apply(WeChatComponent(appID: "wx1234567890abcdef")) // 套用第三方配置 (WeChat SDK)
+      .apply(LinkDeepComponent(appKey: "linkdeep_app_key_abc", groupKey: "linkdeep_group_key_xyz")) // 套用第三方配置 (LinkDeep SDK)
 
 // 將修改後的內容重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
