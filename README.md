@@ -27,7 +27,7 @@ IPAParser relies on **ImageMagick** for image processing (icon resizing). **This
 - Add to Package.swift dependencies:
 
 ```swift
-.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.2.2"),
+.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.3.0"),
 ```
 
 - Add to target dependencies:
@@ -61,12 +61,17 @@ print(parser.executableName())// e.g. "App" or "Example"
 - Modify and Build IPA
 
 ```swift
-// Modify Bundle ID, Display Name, Version, Build Number, and Icon in a chainable way
+// Modify Bundle ID, Display Name, Version, Build Number, Icon, and Third-party Configs in a chainable way
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "New App Name")
       .replace(version: "2.0.0")
       .replace(buildNumber: "200")
       .replace(icon: URL(string: "path_to_new_icon.png")!) // Supports local path or remote URL
+      .apply(GoogleComponent(appKey: "123456789-abc.apps.googleusercontent.com")) // Apply third-party config (Google Sign-In)
+      .apply(FacebookComponent(appID: "987654321", clientToken: "xyz123abc", displayName: "My FB App")) // Apply third-party config (Facebook SDK)
+      .apply(QQComponent(appID: "100424468")) // Apply third-party config (QQ SDK)
+      .apply(WeChatComponent(appID: "wx1234567890abcdef")) // Apply third-party config (WeChat SDK)
+      .apply(LinkDeepComponent(appKey: "linkdeep_app_key_abc", groupKey: "linkdeep_group_key_xyz")) // Apply third-party config (LinkDeep SDK)
 
 // Repackage into a new IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!

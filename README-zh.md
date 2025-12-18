@@ -28,7 +28,7 @@ IPAParser 依賴 **ImageMagick** 進行圖片處理（Icon 縮放）。**僅在�
 - Package.swift 的 dependencies 增加
 
 ```swift
-.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.2.2"),
+.package(url: "https://github.com/coollazy/IPAParser.git", from: "1.3.0"),
 ```
 
 - target 的 dependencies 增加
@@ -62,12 +62,17 @@ print(parser.executableName())// e.g. "App" or "Example"
 - 修改並壓縮 IPA
 
 ```swift
-// 支援鏈式調用，一次修改多個屬性，包含 Bundle ID, 顯示名稱, 版本號, Build Number 及 Icon
+// 支援鏈式調用，一次修改多個屬性，包含 Bundle ID, 顯示名稱, 版本號, Build Number, Icon 及第三方配置
 parser.replace(bundleID: "com.new.id")
       .replace(displayName: "新的 App 名稱")
       .replace(version: "2.0.0")
       .replace(buildNumber: "200")
       .replace(icon: URL(string: "path_to_new_icon.png")!) // 支援本地路徑或遠端 URL
+      .apply(GoogleComponent(appKey: "123456789-abc.apps.googleusercontent.com")) // 套用第三方配置 (Google Sign-In)
+      .apply(FacebookComponent(appID: "987654321", clientToken: "xyz123abc", displayName: "我的 FB 應用程式")) // 套用第三方配置 (Facebook SDK)
+      .apply(QQComponent(appID: "100424468")) // 套用第三方配置 (QQ SDK)
+      .apply(WeChatComponent(appID: "wx1234567890abcdef")) // 套用第三方配置 (WeChat SDK)
+      .apply(LinkDeepComponent(appKey: "linkdeep_app_key_abc", groupKey: "linkdeep_group_key_xyz")) // 套用第三方配置 (LinkDeep SDK)
 
 // 將修改後的內容重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
