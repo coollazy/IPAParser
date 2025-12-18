@@ -9,6 +9,10 @@ public enum IPAParserError: Error, CustomStringConvertible, LocalizedError {
     case invalidGoogleAppKey
     case googleAppKeyNotFound
     case googleURLSchemeNotFound
+    case iconImageNotFound
+    case invalidIconSize
+    case invalidIconFormat
+    case iconDownloadFailed(String)
     
     public var description: String {
         switch self {
@@ -28,6 +32,14 @@ public enum IPAParserError: Error, CustomStringConvertible, LocalizedError {
             return NSLocalizedString("IPAParser google app key (GIDClientID) not found", comment: "")
         case .googleURLSchemeNotFound:
             return NSLocalizedString("IPAParser google URL Scheme not found in CFBundleURLTypes", comment: "")
+        case .iconImageNotFound:
+            return NSLocalizedString("IPAParser icon image not found", comment: "")
+        case .invalidIconSize:
+            return NSLocalizedString("IPAParser invalid icon image size", comment: "")
+        case .invalidIconFormat:
+            return NSLocalizedString("IPAParser invalid icon image format", comment: "")
+        case .iconDownloadFailed(let message):
+            return NSLocalizedString("IPAParser icon download failed: \(message)", comment: "")
         }
     }
     

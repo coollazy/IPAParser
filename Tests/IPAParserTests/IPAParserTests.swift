@@ -166,7 +166,7 @@ final class IPAParserTests: XCTestCase {
         }
         
         // 執行替換
-        parser.replace(icon: iconURL)
+        try parser.replace(icon: iconURL)
         
         // 驗證
         let appDir = try parser.appDirectory()

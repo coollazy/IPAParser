@@ -62,7 +62,7 @@ print(parser.executableName())// e.g. "App" or "Example"
 
 ```swift
 // Modify Bundle ID, Display Name, Version, Build Number, Icon, and Third-party Configs in a chainable way
-parser.replace(bundleID: "com.new.id")
+try parser.replace(bundleID: "com.new.id")
       .replace(displayName: "New App Name")
       .replace(version: "2.0.0")
       .replace(buildNumber: "200")

@@ -10,33 +10,33 @@ public extension IPAParser {
     /// 替換 App Icon
     /// - Parameter icon: 新 Icon 的 URL (支援本地 file:// 路徑與遠端 http(s):// 路徑)
     /// - Note: 若為遠端 URL，會先下載至暫存區，處理完後自動刪除。
-    ///         若過程中發生錯誤 (如下載失敗、找不到檔案)，僅會印出警告，不會拋出錯誤，以維持鏈式呼叫。
     @discardableResult
-    func replace(icon: URL?) -> Self {
+    func replace(icon: URL?) throws -> Self {
         guard let icon = icon else {
             return self
         }
         
-        do {
-            // 1. 判斷 URL 類型
-            if icon.isFileURL {
-                // 本地檔案，直接處理
-                guard FileManager.default.fileExists(atPath: icon.path) else {
-                    print("⚠️ IPAParser Warning: Input icon not found at path: \(icon.path)")
-                    return self
-                }
-                try replace(localIconURL: icon)
-            } else {
-                // 遠端檔案，先下載
-                let tempIconURL = try downloadIcon(from: icon)
-                defer {
-                    // 確保暫存檔案被刪除
-                    try? FileManager.default.removeItem(at: tempIconURL)
-                }
-                try replace(localIconURL: tempIconURL)
+        // 1. 判斷 URL 類型
+        if icon.isFileURL {
+            // 本地檔案，直接處理
+            guard FileManager.default.fileExists(atPath: icon.path) else {
+                throw IPAParserError.iconImageNotFound
             }
-        } catch {
-            print("⚠️ IPAParser Warning: Failed to replace icon. Error: \(error.localizedDescription)")
+            try replace(localIconURL: icon)
+        } else {
+            // 遠端檔案，先下載
+            let tempIconURL: URL
+            do {
+                tempIconURL = try downloadIcon(from: icon)
+            } catch {
+                throw IPAParserError.iconDownloadFailed(error.localizedDescription)
+            }
+            
+            defer {
+                // 確保暫存檔案被刪除
+                try? FileManager.default.removeItem(at: tempIconURL)
+            }
+            try replace(localIconURL: tempIconURL)
         }
         return self
     }
@@ -44,22 +44,42 @@ public extension IPAParser {
     /// 替換 App Icon (相容舊 API)
     /// - Parameter iconPath: 新 Icon 的本地檔案路徑
     @discardableResult
-    func replace(icon iconPath: String) -> Self {
+    func replace(icon iconPath: String) throws -> Self {
         let url = URL(fileURLWithPath: iconPath)
-        return replace(icon: url)
+        return try replace(icon: url)
     }
     
     // MARK: - Core Logic (Private)
     
     private func replace(localIconURL: URL) throws {
+        // 驗證副檔名 (Case Insensitive)
+        if localIconURL.pathExtension.lowercased() != "png" {
+            throw IPAParserError.invalidIconFormat
+        }
+        
         let appDir = try appDirectory()
         
         // 使用 cache 的 PlistParser，如果 Info.plist 遺失則拋出錯誤
         guard let plist = try getPlistParser() else {
-            throw IPAParserError.custom("Info.plist not found in App bundle")
+            throw IPAParserError.infoPlistNotFound
         }
         
-        let sourceImage = try Image(url: localIconURL)
+        let sourceImage: Image
+        do {
+            sourceImage = try Image(url: localIconURL)
+        } catch {
+            // 如果 Image 初始化失敗（例如檔案損壞），視為格式錯誤
+            throw IPAParserError.invalidIconFormat
+        }
+        
+        // 驗證尺寸 (必須嚴格為 1024x1024)
+        guard let size = sourceImage.size else {
+             throw IPAParserError.invalidIconFormat
+        }
+        
+        if size.width != 1024 || size.height != 1024 {
+            throw IPAParserError.invalidIconSize
+        }
         
         var isPlistModified = false
         
