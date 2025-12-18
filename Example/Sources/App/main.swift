@@ -23,7 +23,7 @@ do {
     print("原始 IPA Display Name：\(ipaParser.displayName() ?? "N/A")")
     print("原始 IPA Executable Name：\(ipaParser.executableName() ?? "N/A")") // 只印出原始值
     
-    _ = ipaParser
+    try ipaParser
         .replace(bundleID: "com.newtest.example")
         .replace(displayName: "新IPA")
         .replace(version: "2.0.0")
