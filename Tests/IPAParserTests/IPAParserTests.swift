@@ -524,4 +524,96 @@ final class IPAParserTests: XCTestCase {
         XCTAssertFalse(schemes.contains(oldFBScheme), "Should remove old FB Scheme")
         XCTAssertTrue(schemes.contains(expectedNewScheme), "Should contain new FB Scheme")
     }
+
+    // MARK: - QQ Component Tests
+
+    func testApplyQQComponent() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appID = "100424468"
+        // 100424468 (dec) -> 05FC5B14 (hex)
+        // uppercase: false -> 05fc5b14 (依據您的舊代碼實作)
+        // 但 Swift String(val, radix: 16) 預設是不補0的嗎？
+        // 100424468 = 0x5FC5B14. 注意開頭沒有 0。
+        // hex string will be "5fc5b14"
+        let expectedTencentScheme = "tencent100424468"
+        let expectedQQScheme = "qq5fc5b14" 
+        
+        parser.apply(QQComponent(appID: appID))
+        
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        // Verify QQAppID
+        XCTAssertEqual(plistParser.get(keyPath: "QQAppID") as? String, appID)
+        
+        let urlTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        // Verify tencent scheme
+        let hasTencent = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedTencentScheme)
+        }
+        XCTAssertTrue(hasTencent, "CFBundleURLTypes should contain the tencent URL Scheme")
+        
+        // Verify qq hex scheme
+        let hasQQ = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedQQScheme)
+        }
+        XCTAssertTrue(hasQQ, "CFBundleURLTypes should contain the qq (hex) URL Scheme")
+    }
+    
+    func testApplyQQComponentWithNonNumericID() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appID = "not_a_number"
+        let expectedTencentScheme = "tencentnot_a_number"
+        
+        parser.apply(QQComponent(appID: appID))
+        
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        // Verify QQAppID
+        XCTAssertEqual(plistParser.get(keyPath: "QQAppID") as? String, appID)
+        
+        let urlTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        // Verify tencent scheme exists
+        let hasTencent = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedTencentScheme)
+        }
+        XCTAssertTrue(hasTencent, "Should update tencent scheme even if ID is non-numeric")
+        
+        // Verify NO qq scheme (cannot convert to hex)
+        let hasQQPrefix = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains { $0.hasPrefix("qq") }
+        }
+        // 注意：這裡假設原始 plist 沒有 qq scheme。如果有，它應該被保留還是？
+        // 我們的邏輯是：如果有 qq 開頭的，updateOrAddScheme 會去替換它。
+        // 但因為我們無法生成 newScheme，所以 `apply` 方法裡根本不會呼叫處理 qqScheme 的那段 code。
+        // 所以原本存在的 qq scheme 會被保留。
+        // 在這個乾淨的測試環境下，應該是 False。
+        XCTAssertFalse(hasQQPrefix, "Should NOT add qq scheme for non-numeric ID")
+    }
+    
+    func testApplyQQComponentWithNil() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        
+        // Initial state
+        let plistParser = try PlistParser(url: infoPlistURL)
+        let initialQQID = plistParser.get(keyPath: "QQAppID") as? String
+        
+        // Apply nil
+        parser.apply(QQComponent(appID: nil))
+        
+        // Verify unchanged
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        XCTAssertEqual(updatedParser.get(keyPath: "QQAppID") as? String, initialQQID)
+    }
 }

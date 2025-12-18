@@ -70,6 +70,7 @@ parser.replace(bundleID: "com.new.id")
       .replace(icon: URL(string: "path_to_new_icon.png")!) // 支援本地路徑或遠端 URL
       .apply(GoogleComponent(appKey: "123456789-abc.apps.googleusercontent.com")) // 套用第三方配置 (Google Sign-In)
       .apply(FacebookComponent(appID: "987654321", clientToken: "xyz123abc", displayName: "我的 FB 應用程式")) // 套用第三方配置 (Facebook SDK)
+      .apply(QQComponent(appID: "100424468")) // 套用第三方配置 (QQ SDK)
 
 // 將修改後的內容重新壓縮成 IPA
 let toURL = URL(string: "path_to_new_ipa_want_to_place")!
