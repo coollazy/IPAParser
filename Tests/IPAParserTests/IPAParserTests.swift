@@ -418,4 +418,110 @@ final class IPAParserTests: XCTestCase {
         }
         XCTAssertFalse(hasSchemeA, "CFBundleURLTypes should NO LONGER contain the old Key A scheme")
     }
+
+    // MARK: - Facebook Component Tests
+
+    func testApplyFacebookComponent() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appID = "1234567890"
+        let clientToken = "abcdef123456"
+        let displayName = "Test FB App"
+        let expectedScheme = "fb1234567890"
+        
+        parser.apply(FacebookComponent(appID: appID, clientToken: clientToken, displayName: displayName))
+        
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        // Verify Keys
+        XCTAssertEqual(plistParser.get(keyPath: "FacebookAppID") as? String, appID)
+        XCTAssertEqual(plistParser.get(keyPath: "FacebookClientToken") as? String, clientToken)
+        XCTAssertEqual(plistParser.get(keyPath: "FacebookDisplayName") as? String, displayName)
+        
+        // Verify URL Scheme
+        let urlTypes = plistParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        let hasScheme = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedScheme)
+        }
+        XCTAssertTrue(hasScheme, "CFBundleURLTypes should contain the Facebook URL Scheme")
+    }
+
+    func testApplyFacebookComponentWithNilValues() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        
+        // Set some initial values directly for testing nil behavior
+        let initialAppID = "initial_fb_app_id"
+        let initialClientToken = "initial_fb_client_token"
+        let initialDisplayName = "Initial FB App Name"
+        
+        let plistParser = try PlistParser(url: infoPlistURL)
+        plistParser.replace(keyPath: "FacebookAppID", with: initialAppID)
+        plistParser.replace(keyPath: "FacebookClientToken", with: initialClientToken)
+        plistParser.replace(keyPath: "FacebookDisplayName", with: initialDisplayName)
+        plistParser.replace(keyPath: "CFBundleURLTypes", with: [[ "CFBundleURLSchemes": ["fb\(initialAppID)"] ]])
+        try plistParser.build()
+        
+        // Apply with nil values, expecting no change to those nilled fields
+        let newAppID = "123456" // Only update appID
+        parser.apply(FacebookComponent(appID: newAppID, clientToken: nil, displayName: nil))
+        
+        // Verify
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        XCTAssertEqual(updatedParser.get(keyPath: "FacebookAppID") as? String, newAppID) // Changed
+        XCTAssertEqual(updatedParser.get(keyPath: "FacebookClientToken") as? String, initialClientToken) // Unchanged
+        XCTAssertEqual(updatedParser.get(keyPath: "FacebookDisplayName") as? String, initialDisplayName) // Unchanged
+        
+        let expectedScheme = "fb\(newAppID)"
+        let urlTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        let hasExpectedScheme = urlTypes.contains { type in
+            guard let schemes = type["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedScheme)
+        }
+        XCTAssertTrue(hasExpectedScheme, "CFBundleURLTypes should contain the updated Facebook URL Scheme")
+    }
+    
+    func testApplyFacebookComponentPreservesExistingSchemes() throws {
+        let parser = try IPAParser(ipaURL: ipaURL)
+        let appDir = try parser.appDirectory()
+        let infoPlistURL = appDir.appendingPathComponent("Info.plist")
+        let plistParser = try PlistParser(url: infoPlistURL)
+        
+        // 1. Setup initial state with mixed schemes
+        let oldFBScheme = "fb987654321" // Old FB scheme
+        let otherScheme = "twitter123" // Other scheme to preserve
+        let initialURLTypes: [[String: Any]] = [
+            [
+                "CFBundleTypeRole": "Editor",
+                "CFBundleURLSchemes": [otherScheme, oldFBScheme]
+            ]
+        ]
+        plistParser.replace(keyPath: "CFBundleURLTypes", with: initialURLTypes)
+        try plistParser.build()
+        
+        // 2. Apply new FB Config
+        let newAppID = "111222333"
+        let expectedNewScheme = "fb111222333"
+        parser.apply(FacebookComponent(appID: newAppID))
+        
+        // 3. Verify
+        let updatedParser = try PlistParser(url: infoPlistURL)
+        let updatedURLTypes = updatedParser.get(keyPath: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        
+        guard let targetEntry = updatedURLTypes.first(where: { entry in
+            guard let schemes = entry["CFBundleURLSchemes"] as? [String] else { return false }
+            return schemes.contains(expectedNewScheme)
+        }) else {
+            XCTFail("Could not find URL Type entry with new FB Scheme")
+            return
+        }
+        
+        let schemes = targetEntry["CFBundleURLSchemes"] as? [String] ?? []
+        XCTAssertTrue(schemes.contains(otherScheme), "Should preserve other existing schemes (e.g., Twitter)")
+        XCTAssertFalse(schemes.contains(oldFBScheme), "Should remove old FB Scheme")
+        XCTAssertTrue(schemes.contains(expectedNewScheme), "Should contain new FB Scheme")
+    }
 }
