@@ -84,7 +84,7 @@ public extension IPAParser {
         var isPlistModified = false
         
         // 定義標準尺寸表 (Base Size)
-        let iphoneStandardSizes: [Double] = [20, 29, 40, 60]
+        let iphoneStandardSizes: [Double] = [20, 29, 40, 57, 60]
         let ipadStandardSizes: [Double] = [20, 29, 40, 76, 83.5]
         
         // 定義配置路徑結構
@@ -127,36 +127,38 @@ public extension IPAParser {
             // 用來記錄我們這次操作中實際生成了哪些 Prefix，避免重複加入
             var generatedPrefixes: Set<String> = []
             
-            // B. 嘗試基於現有列表進行替換 (如果列表是空的，這步會跳過)
+            // B. 嘗試基於現有列表進行替換，並記錄已覆蓋的尺寸
+            var coveredSizes: Set<Double> = []
+            
             for prefix in currentFiles {
+                if let size = parseSize(from: prefix) {
+                    coveredSizes.insert(size)
+                }
+                
                 let generated = try processIconPrefix(prefix, isiPad: path.isiPad, appDir: appDir, sourceImage: sourceImage)
                 if generated {
                     generatedPrefixes.insert(prefix)
                 }
             }
             
-            // C. 如果列表是空的，或者無法從現有名稱解析出足夠的資訊 (例如只有 "AppIcon")
-            // 我們啟動「補全計畫」：生成標準尺寸 Icon 並註冊
-            let hasValidSizeDefinitions = currentFiles.contains { parseSize(from: $0) != nil }
+            // C. 補全計畫：檢查標準尺寸是否缺漏，若缺漏則自動補齊
+            let baseName = "AppIcon"
             
-            if !hasValidSizeDefinitions {
-                print("ℹ️ IPAParser: No explicit size definitions found for \(path.rootKey). Generating standard icons.")
+            for size in path.standardSizes {
+                if coveredSizes.contains(size) {
+                    continue
+                }
                 
-                // 使用一個乾淨的 Base Name，避免跟原本的 "AppIcon" 混淆
-                let baseName = "AppIcon"
+                // 格式化名稱，去掉小數點後的零
+                let sizeString = size.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", size) : String(size)
+                let newPrefix = "\(baseName)\(sizeString)x\(sizeString)" // e.g., AppIcon60x60
                 
-                for size in path.standardSizes {
-                    // 格式化名稱，去掉小數點後的零
-                    let sizeString = size.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", size) : String(size)
-                    let newPrefix = "\(baseName)\(sizeString)x\(sizeString)" // e.g., AppIcon60x60
-                    
-                    // 生成檔案
-                    _ = try processIconPrefix(newPrefix, isiPad: path.isiPad, appDir: appDir, sourceImage: sourceImage, forcedBaseSize: size)
-                    
-                    // 加入到 Plist 列表
-                    if !currentFiles.contains(newPrefix) {
-                        currentFiles.append(newPrefix)
-                    }
+                // 生成檔案
+                _ = try processIconPrefix(newPrefix, isiPad: path.isiPad, appDir: appDir, sourceImage: sourceImage, forcedBaseSize: size)
+                
+                // 加入到 Plist 列表
+                if !currentFiles.contains(newPrefix) {
+                    currentFiles.append(newPrefix)
                 }
             }
             
@@ -184,12 +186,21 @@ public extension IPAParser {
     @discardableResult
     private func processIconPrefix(_ prefix: String, isiPad: Bool, appDir: URL, sourceImage: Image, forcedBaseSize: Double? = nil) throws -> Bool {
         var processed = false
-        let scales = isiPad ? [1, 2] : [2, 3]
+        // iPhone 支援 1x (Legacy), 2x, 3x; iPad 支援 1x, 2x
+        let scales = isiPad ? [1, 2] : [1, 2, 3]
+        
+        // Sanitize prefix: remove extension if present
+        let cleanPrefix = prefix.hasSuffix(".png") ? String(prefix.dropLast(4)) : prefix
         
         for scale in scales {
-            let suffix = isiPad ? "~ipad" : ""
+            var suffix = ""
+            if isiPad {
+                // Avoid double suffix if already present
+                suffix = cleanPrefix.hasSuffix("~ipad") ? "" : "~ipad"
+            }
+            
             let scaleString = scale > 1 ? "@\(scale)x" : ""
-            let fileName = "\(prefix)\(scaleString)\(suffix).png"
+            let fileName = "\(cleanPrefix)\(scaleString)\(suffix).png"
             let fileURL = appDir.appendingPathComponent(fileName)
             
             var targetSize: CGSize?
@@ -205,7 +216,7 @@ public extension IPAParser {
                 targetSize = CGSize(width: pixel, height: pixel)
             }
             // 3. 最後：嘗試從名稱解析
-            else if let parsed = parseSize(from: prefix) {
+            else if let parsed = parseSize(from: cleanPrefix) { // Use cleanPrefix
                 let pixel = parsed * Double(scale)
                 targetSize = CGSize(width: pixel, height: pixel)
             }
