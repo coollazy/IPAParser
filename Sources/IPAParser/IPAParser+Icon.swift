@@ -1,9 +1,9 @@
 import Foundation
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
 import Image
 import PlistParser
+import AsyncHTTPClient
+import NIOCore
+import NIOFoundationCompat
 
 public extension IPAParser {
     
@@ -11,7 +11,7 @@ public extension IPAParser {
     /// - Parameter icon: 新 Icon 的 URL (支援本地 file:// 路徑與遠端 http(s):// 路徑)
     /// - Note: 若為遠端 URL，會先下載至暫存區，處理完後自動刪除。
     @discardableResult
-    func replace(icon: URL?) throws -> Self {
+    func replace(icon: URL?) async throws -> Self {
         guard let icon = icon else {
             return self
         }
@@ -27,7 +27,7 @@ public extension IPAParser {
             // 遠端檔案，先下載
             let tempIconURL: URL
             do {
-                tempIconURL = try downloadIcon(from: icon)
+                tempIconURL = try await downloadIcon(from: icon)
             } catch {
                 throw IPAParserError.iconDownloadFailed(error.localizedDescription)
             }
@@ -44,9 +44,9 @@ public extension IPAParser {
     /// 替換 App Icon (相容舊 API)
     /// - Parameter iconPath: 新 Icon 的本地檔案路徑
     @discardableResult
-    func replace(icon iconPath: String) throws -> Self {
+    func replace(icon iconPath: String) async throws -> Self {
         let url = URL(fileURLWithPath: iconPath)
-        return try replace(icon: url)
+        return try await replace(icon: url)
     }
     
     // MARK: - Core Logic (Private)
@@ -254,63 +254,28 @@ public extension IPAParser {
     
     // MARK: - Download Helper
     
-    private func downloadIcon(from url: URL) throws -> URL {
-        let semaphore = DispatchSemaphore(value: 0)
-        var resultURL: URL?
-        var resultError: Error?
-        
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30 // 30秒超時
-        config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
-        
-        let task = session.downloadTask(with: url) { location, response, error in
-            defer { semaphore.signal() }
-            
-            if let error = error {
-                resultError = error
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                resultError = IPAParserError.custom("Invalid response for icon download.")
-                return
-            }
-            
-            guard (200...299).contains(httpResponse.statusCode) else {
-                resultError = IPAParserError.custom("Failed to download icon. HTTP Status: \(httpResponse.statusCode)")
-                return
-            }
-            
-            guard let location = location else {
-                resultError = IPAParserError.custom("Download succeeded but file location is nil.")
-                return
-            }
-            
-            // 將暫存檔移到我們可控的位置
-            let tempDir = FileManager.default.temporaryDirectory
-            let targetURL = tempDir.appendingPathComponent(UUID().uuidString).appendingPathExtension("png")
-            
-            do {
-                try FileManager.default.moveItem(at: location, to: targetURL)
-                resultURL = targetURL
-            } catch {
-                resultError = error
-            }
+    private func downloadIcon(from url: URL) async throws -> URL {
+        let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
+        defer {
+            try? httpClient.syncShutdown()
         }
         
-        task.resume()
-        semaphore.wait()
+        var request = HTTPClientRequest(url: url.absoluteString)
+        let response = try await httpClient.execute(request, timeout: .seconds(30))
         
-        if let error = resultError {
-            throw error
+        guard response.status == .ok else {
+            throw IPAParserError.custom("Failed to download icon. HTTP Status: \(response.status.code)")
         }
         
-        guard let url = resultURL else {
-            throw IPAParserError.custom("Unknown error during icon download.")
-        }
+        // 收集 Body 資料
+        let body = try await response.body.collect(upTo: 10 * 1024 * 1024) // 限制 10MB
+        let data = Data(buffer: body)
         
-        return url
+        let tempDir = FileManager.default.temporaryDirectory
+        let targetURL = tempDir.appendingPathComponent(UUID().uuidString).appendingPathExtension("png")
+        try data.write(to: targetURL)
+        
+        return targetURL
     }
     
     private struct IconEntry {

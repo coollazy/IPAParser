@@ -23,8 +23,9 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/coollazy/Image.git", from: "1.2.1"),
+        .package(url: "https://github.com/coollazy/Image.git", from: "1.2.2"),
         .package(url: "https://github.com/coollazy/ZIPFoundation.git", from: "0.9.20"),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.21.0"),
     ],
     targets: [
         .target(
@@ -32,6 +33,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Image", package: "Image"),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
+                .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .target(name: "PlistParser"),
             ]
         ),

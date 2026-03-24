@@ -24,11 +24,10 @@ RUN swift build -c release --static-swift-stdlib
 # ================================
 FROM ubuntu:noble
 
-# 安裝 runtime 依賴（包含 ImageMagick CLI）
+# 安裝 runtime 依賴（包含 ImageMagick CLI 與 CA 憑證）
 RUN apt-get update && apt-get install -y \
       ca-certificates \
       imagemagick \
-      libcurl4 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

@@ -20,7 +20,7 @@ final class IPAParserIconStrictnessTests: XCTestCase {
         iconURL = icon
     }
     
-    func testiPhoneOnlyIPADoesNotGetiPadIcons() throws {
+    func testiPhoneOnlyIPADoesNotGetiPadIcons() async throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         let appDir = try parser.appDirectory()
         let infoPlistURL = appDir.appendingPathComponent("Info.plist")
@@ -39,7 +39,7 @@ final class IPAParserIconStrictnessTests: XCTestCase {
         try plistParser.build()
         
         // 2. Perform Replacement
-        try parser.replace(icon: iconURL)
+        try await parser.replace(icon: iconURL)
         
         // 3. Verify
         let updatedPlist = try PlistParser(url: infoPlistURL)
@@ -47,7 +47,7 @@ final class IPAParserIconStrictnessTests: XCTestCase {
         XCTAssertNil(updatedPlist.get(keyPath: "CFBundleIcons~ipad"), "iPad icons should NOT be created if they didn't exist")
     }
     
-    func testLegacyiPhoneIconsAreReplaced() throws {
+    func testLegacyiPhoneIconsAreReplaced() async throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         let appDir = try parser.appDirectory()
         let infoPlistURL = appDir.appendingPathComponent("Info.plist")
@@ -80,7 +80,7 @@ final class IPAParserIconStrictnessTests: XCTestCase {
         // 3. Perform Replacement
         // This should take the input icon (iconURL), resize it to 57x57 and 29x29, 
         // and OVERWRITE the files we just created.
-        try parser.replace(icon: iconURL)
+        try await parser.replace(icon: iconURL)
         
         // 4. Verify
         for file in legacyFiles {

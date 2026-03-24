@@ -21,7 +21,7 @@ final class IPAParseriPadIconTests: XCTestCase {
         iconURL = icon
     }
     
-    func testReplaceIconWithiPadSupport() throws {
+    func testReplaceIconWithiPadSupport() async throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         let appDir = try parser.appDirectory()
         let infoPlistURL = appDir.appendingPathComponent("Info.plist")
@@ -44,7 +44,7 @@ final class IPAParseriPadIconTests: XCTestCase {
         try plistParser.build()
         
         // 2. Perform Icon Replacement
-        try parser.replace(icon: iconURL)
+        try await parser.replace(icon: iconURL)
         
         // 3. Verify Changes
         
@@ -84,7 +84,7 @@ final class IPAParseriPadIconTests: XCTestCase {
         }
     }
     
-    func testReplaceIconGeneratesiPadStandardSizesWhenMissing() throws {
+    func testReplaceIconGeneratesiPadStandardSizesWhenMissing() async throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         let appDir = try parser.appDirectory()
         let infoPlistURL = appDir.appendingPathComponent("Info.plist")
@@ -102,7 +102,7 @@ final class IPAParseriPadIconTests: XCTestCase {
         try plistParser.build()
         
         // 2. Perform Replacement
-        try parser.replace(icon: iconURL)
+        try await parser.replace(icon: iconURL)
         
         // 3. Verify
         let updatedPlist = try PlistParser(url: infoPlistURL)
@@ -123,7 +123,7 @@ final class IPAParseriPadIconTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: expectedFile.path))
     }
     
-    func testReplaceIconCompletesMissingiPadSizes() throws {
+    func testReplaceIconCompletesMissingiPadSizes() async throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         let appDir = try parser.appDirectory()
         let infoPlistURL = appDir.appendingPathComponent("Info.plist")
@@ -143,7 +143,7 @@ final class IPAParseriPadIconTests: XCTestCase {
         try plistParser.build()
         
         // 2. Perform Replacement
-        try parser.replace(icon: iconURL)
+        try await parser.replace(icon: iconURL)
         
         // 3. Verify
         let updatedPlist = try PlistParser(url: infoPlistURL)
