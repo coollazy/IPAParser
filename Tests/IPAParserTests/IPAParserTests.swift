@@ -156,7 +156,7 @@ final class IPAParserTests: XCTestCase {
         XCTAssertEqual(newPlistParser.get(keyPath: "CFBundleIdentifier") as? String, originalBundleID)
     }
     
-    func testReplaceIcon() throws {
+    func testReplaceIcon() async throws {
         let parser = try IPAParser(ipaURL: ipaURL)
         
         // 準備測試 Icon
@@ -166,7 +166,7 @@ final class IPAParserTests: XCTestCase {
         }
         
         // 執行替換
-        try parser.replace(icon: iconURL)
+        try await parser.replace(icon: iconURL)
         
         // 驗證
         let appDir = try parser.appDirectory()

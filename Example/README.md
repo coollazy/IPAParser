@@ -40,7 +40,7 @@ swift build --product App --package-path Example --configuration release
 
 Dockerfile 會自動安裝以下執行時所需的依賴庫：
 *   **ImageMagick (`imagemagick`)**: 用於 `IPAParser` 的圖示縮放功能 (`replace(icon:)`)。
-*   **libcurl (`libcurl4`)**: 用於 Swift 的 `FoundationNetworking` (URLSession) 支援。
+*   **CA 憑證 (`ca-certificates`)**: 確保 `AsyncHTTPClient` 能正常處理 HTTPS URL 下載（用於 `replace(icon:)`）。
 
 #### 建構 Docker 映像
 
