@@ -38,5 +38,5 @@ COPY --from=build /IPAParser/Example/.build/release/App ./
 # 複製 Resources
 COPY --from=build /IPAParser/Example/Resources ./Resources
 
-EXPOSE 8080
 CMD ["./App"]
+

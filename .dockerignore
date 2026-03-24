@@ -1,0 +1,24 @@
+# Swift 編譯產物 (排除所有層級的產物，避免 macOS/Linux 衝突)
+**/.build/
+**/.swiftpm/
+
+# 版本控制
+.git/
+.github/
+.gitignore
+
+# IDE / 編輯器檔案
+.vscode/
+.idea/
+*.xcodeproj/
+*.xcworkspace/
+.DS_Store
+
+# 測試檔案 (Example 編譯與執行不需要 Tests/ 資料夾)
+Tests/
+
+# 其他不需要的文件
+*.md
+LICENSE
+Example/Dockerfile
+.dockerignore
