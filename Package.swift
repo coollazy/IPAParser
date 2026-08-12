@@ -26,6 +26,7 @@ let package = Package(
         .package(url: "https://github.com/coollazy/Image.git", from: "1.2.2"),
         .package(url: "https://github.com/coollazy/ZIPFoundation.git", from: "0.9.20"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.21.0"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
     ],
     targets: [
         .target(
@@ -34,6 +35,8 @@ let package = Package(
                 .product(name: "Image", package: "Image"),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOFoundationCompat", package: "swift-nio"),
                 .target(name: "PlistParser"),
             ]
         ),
