@@ -85,7 +85,7 @@ public class IPAParser {
     }
     
     /// 壓縮成 IPA 到指令路徑
-    public func build(toPath: URL) throws {
+    public func build(toPath: URL, compressionMethod: CompressionMethod = .deflate) throws {
         // 建立暫存檔案路徑及名稱
         let modifiedArchiveFileLocation = zipDirectoryURL
             .appendingPathComponent(UUID().uuidString)
@@ -99,7 +99,7 @@ public class IPAParser {
         do {
             let paths = try FileManager.default.contentsOfDirectory(atPath: unzipDirectoryURL.path)
                 .map { unzipDirectoryURL.appendingPathComponent($0) }
-            try FileManager.default.zipItems(at: paths, to: modifiedArchiveFileLocation)
+            try FileManager.default.zipItems(at: paths, to: modifiedArchiveFileLocation, compressionMethod: compressionMethod)
         } catch {
             throw IPAParserError.zipFailed
         }

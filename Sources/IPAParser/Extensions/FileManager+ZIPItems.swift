@@ -2,7 +2,7 @@ import Foundation
 import ZIPFoundation
 
 extension FileManager {
-    public func zipItems(at sources: [URL], to destinationURL: URL, shouldKeepParent: Bool = true, compressionMethod: CompressionMethod = .none) throws {
+    public func zipItems(at sources: [URL], to destinationURL: URL, shouldKeepParent: Bool = true, compressionMethod: CompressionMethod) throws {
         let fileManager = FileManager()
         
         // 確認要產生壓縮檔案的位置不存在
